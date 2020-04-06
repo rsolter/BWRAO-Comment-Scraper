@@ -1,11 +1,11 @@
-Plan for BWRAO Scraper
+To do's for BWRAO Scraper
 
 Min. Viable Product:
-- Choose one page and find a way to load it into Python and parse it
-- Solve for comments not loading with '#comments' suffix in URL
-- Isolate the comments to get author, number of rec's execution_count
-    - Author - inside of <span class="c-comments__date">
-    - Rec count (if exists) - <span class="c-comments__rec-count">
-    - A top-level comment - class="c-comments__comment"
-    - Second-level comment - class="c-comments__comment c-comments_depth-1"
-    - Second-level comment - class="c-comments__comment c-comments_depth-1 c-comments__recommended"
+- Choose one page WITH comments and find a way to load it into Python and parse it
+- Isolate the following
+  - Per article: title, publish date, Author, number of comments, unique number of posters
+  - Per comment: poster's name, number of recs, number of replies, comment hierarchy (e.g. first response has a depth of 1, response to a response has a depth of 2, etc.)
+
+Other issues to solve:
+- Solve for comments not always loading in URs, even with '#comments' suffix added to address. Maybe use an implicit wait in Selnium to wait for some condition to be met?
+- How to parse through the archives of BWRAO's SBNation site to get the URLs for all articles
