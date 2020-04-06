@@ -1,0 +1,11 @@
+Plan for BWRAO Scraper
+
+Min. Viable Product:
+- Choose one page and find a way to load it into Python and parse it
+- Solve for comments not loading with '#comments' suffix in URL
+- Isolate the comments to get author, number of rec's execution_count
+    - Author - inside of <span class="c-comments__date">
+    - Rec count (if exists) - <span class="c-comments__rec-count">
+    - A top-level comment - class="c-comments__comment"
+    - Second-level comment - class="c-comments__comment c-comments_depth-1"
+    - Second-level comment - class="c-comments__comment c-comments_depth-1 c-comments__recommended"
