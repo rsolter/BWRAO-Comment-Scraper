@@ -5,12 +5,17 @@ library(anytime)
 library(zoo)
 #library(sentimentr)
 
+<<<<<<< HEAD
 c1 <- read.csv("tmp/comments_1_1537.csv")
 c2 <- read.csv("tmp/Comments_1538_1562.csv")
 c3 <- read.csv("tmp/Comments_1562_1617.csv")
 c4 <- read.csv("tmp/Comments_1618_2338.csv")
 c5 <- read.csv("tmp/Comments_3905_5022.csv")
 c6 <- read.csv("tmp/Comments_5023_6035.csv")
+=======
+c1 <- read.csv("Data/comments_1_1537.csv")
+c2 <- read.csv("Data/Comments_5023_6035.csv")
+>>>>>>> 1ada4d6d0b44c1387fbaf83eae2f00b5d3c3d6d6
 
 names(c5) <- names(c1)
 names(c6) <- names(c1)
