@@ -5,8 +5,8 @@ library(anytime)
 library(zoo)
 #library(sentimentr)
 
-c1 <- read.csv("comments_1_1537.csv")
-c2 <- read.csv("Comments_5023_6035.csv")
+c1 <- read.csv("Data/comments_1_1537.csv")
+c2 <- read.csv("Data/Comments_5023_6035.csv")
 
 names(c2) <- names(c1)
 
