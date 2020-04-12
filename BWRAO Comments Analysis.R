@@ -5,25 +5,36 @@ library(anytime)
 library(zoo)
 #library(sentimentr)
 
-<<<<<<< HEAD
-c1 <- read.csv("tmp/comments_1_1537.csv")
-c2 <- read.csv("tmp/Comments_1538_1562.csv")
-c3 <- read.csv("tmp/Comments_1562_1617.csv")
-c4 <- read.csv("tmp/Comments_1618_2338.csv")
-c5 <- read.csv("tmp/Comments_3905_5022.csv")
-c6 <- read.csv("tmp/Comments_5023_6035.csv")
-=======
-c1 <- read.csv("Data/comments_1_1537.csv")
-c2 <- read.csv("Data/Comments_5023_6035.csv")
->>>>>>> 1ada4d6d0b44c1387fbaf83eae2f00b5d3c3d6d6
+setwd("Personal Git/BWRAO-Comment-Scraper/")
 
-names(c5) <- names(c1)
-names(c6) <- names(c1)
 
-comments <- rbind(c1,c2,c3,c4,c5,c6)
+links1<-read.table(file="Data/archive_links_1_78.txt")
+links2<-read.table(file="Data/archive_links_79_97.txt")
+links3<-read.table(file="Data/archive_links_98_end.txt")
 
-#write.csv(comments, "comments_1_1537.csv",row.names=F)
+links_orig <-rbind(links1,links2,links3) 
 
+#write.csv(links_orig, "Data/links_orig.csv",row.names=F)
+
+comment_files<-list.files(path="Data/",pattern = ".csv")
+
+comment_list <- list()
+
+for(j in 1:length(comment_files)){
+  comment_name <- paste("c",j,sep="")
+  comment_list[[j]] <- read.csv(paste("Data/",comment_files[j],sep=""))
+  names(comment_list[[j]]) <- c("Article_Title","Article_Author","Article_Date","Comment_Title","Comment_Body"
+                                ,"Comment_Poster","Comment_Date","Comment_Time","Comment_Recs")
+} 
+
+comments <- bind_rows(comment_list)
+
+#write.csv(comments, "Data/comments_orig.csv",row.names=F)
+
+users <- comments$Comment_Poster %>% unique()
+write.table(users,"Data/users.txt")
+
+###############################
 # Formatting Dates
 
 comments$Article.Publish.Date <- as.character(comments$Article.Publish.Date)
