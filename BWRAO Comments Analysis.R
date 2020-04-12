@@ -45,6 +45,8 @@ write.csv(c6, "Data/Comments6.csv",row.names=F)
 users <- comments1$Comment_Poster %>% unique()
 write.table(users,"Data/users.txt")
 
+read.table(file = )
+
 
 
 ###############################
