@@ -1,2 +1,5 @@
 .ipynd_checkpoints
 */.ipynb_checkpoints/*.ipynb
+
+*.Rdata
+*.Rhistory
