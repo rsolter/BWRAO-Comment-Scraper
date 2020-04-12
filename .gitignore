@@ -3,4 +3,5 @@
 
 *.Rdata
 *.Rhistory
-**.RDatatmp
+*.RDatatmp
+*.RData
