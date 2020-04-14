@@ -5,3 +5,6 @@
 *.Rhistory
 *.RDatatmp
 *.RData
+
+Data/Full_Comments_no_body.csv
+Data/Full_Comments.csv
