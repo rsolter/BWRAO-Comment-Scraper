@@ -3,82 +3,91 @@
 library(tidyverse)
 library(anytime)
 library(zoo)
-#library(sentimentr)
+library(stringr)
+library(scales)
 
 setwd("Personal Git/BWRAO-Comment-Scraper/")
+comments<- read.csv("Data/Full_Comments_no_body.csv",stringsAsFactors = F)
 
 
-#links1<-read.table(file="Data/archive_links_1_78.txt")
-#links2<-read.table(file="Data/archive_links_79_97.txt")
-#links3<-read.table(file="Data/archive_links_98_end.txt")
-#links_orig <-rbind(links1,links2,links3) 
-#write.csv(links_orig, "Data/links_orig.csv",row.names=F)
+## Processing ----
 
-
-comment_files<-list.files(path="Data/",pattern = ".csv")
-
-comment_list <- list()
-
-for(j in 1:length(comment_files)){
-  comment_name <- paste("c",j,sep="")
-  comment_list[[j]] <- read.csv(paste("Data/",comment_files[j],sep=""))
-  names(comment_list[[j]]) <- c("Article_Title","Article_Author","Article_Date","Comment_Title","Comment_Body"
-                                ,"Comment_Poster","Comment_Date","Comment_Time","Comment_Recs")
-} 
-
-comments1 <- bind_rows(comment_list[1:2])
-
-c1<-comments1[1:100000,]
-c2<-comments1[100001:200000,]
-c3<-comments1[200001:300000,]
-c4<-comments1[300001:400000,]
-c5<-comments1[400001:500000,]
-c6<-comments1[500001:630292,]
-
-write.csv(c1, "Data/Comments1.csv",row.names=F)
-write.csv(c2, "Data/Comments2.csv",row.names=F)
-write.csv(c3, "Data/Comments3.csv",row.names=F)
-write.csv(c4, "Data/Comments4.csv",row.names=F)
-write.csv(c5, "Data/Comments5.csv",row.names=F)
-write.csv(c6, "Data/Comments6.csv",row.names=F)
-
-users <- comments1$Comment_Poster %>% unique()
-write.table(users,"Data/users.txt")
-
-read.table(file = )
-
-
-
-###############################
 # Formatting Dates
-comments <- comments1
+comments$Article_Date <- as.Date(comments$Article_Date)
+comments$Comment_Date <- as.Date(comments$Comment_Date)
 
-comments$Article.Publish.Date <- as.character(comments$Article.Publish.Date)
-comments$Article.Publish.Date <- anytime::anytime(comments$Article.Publish.Date)
-comments$Article.Publish.Date <- as.Date(comments$Article.Publish.Date)
+# Trimming 
+comments$Article_Author <- stringr::str_trim(comments$Article_Author)
+comments$Comment_Poster <- stringr::str_trim(comments$Comment_Poster)
 
-comments$Article.Publish.Year <- lubridate::year(comments$Article.Publish.Date)
-comments$Article.Publish.Month <- lubridate::month(comments$Article.Publish.Date)
-
-comments$Comment.Date <- as.character(comments$Comment.Date)
-comments$Comment.Date <- anytime::anytime(comments$Comment.Date)
-comments$Comment.Date <- as.Date(comments$Comment.Date)
-
-comments$Comment.Body <- as.character(comments$Comment.Body)
 
 
 ###############################
 # Visualizations
 
 ## Comment count over time
-comments_time <- comments %>% group_by(Article.Publish.Date) %>% tally()
+comments_time <- comments %>% group_by(Article_Date) %>% tally()
 comments_time$trailing_30_avg <- zoo::rollmeanr(comments_time$n,k=30,fill=NA)
 
-time_chart<-ggplot(comments_time) +
-  geom_point(aes(x=Article.Publish.Date, y=n), alpha=0.4) +
-  geom_line(aes(x=Article.Publish.Date,y=n), alpha=0.4) +
-  geom_point(aes(x=Article.Publish.Date, y=trailing_30_avg), color="dark red") +
-  geom_line(aes(x=Article.Publish.Date, y=trailing_30_avg), color="dark red") +
-  theme_minimal() + ylab("Comment Count") +
-  ggtitle("Daily Count of Comments",subtitle = "30-day avg. in brown")
+ggplot(comments_time) +
+  geom_point(aes(x=Article_Date, y=n), alpha=0.4, color="#636363") +
+  #geom_line(aes(x=Article_Date,y=n), alpha=0.4) +
+  #geom_point(aes(x=Article_Date, y=trailing_30_avg), color="#636363") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  geom_line(aes(x=Article_Date, y=trailing_30_avg), color="#3182bd", size=1) +
+  geom_vline(xintercept = as.Date("2008-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2009-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2010-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2011-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2012-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2013-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2014-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2015-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2016-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2017-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2018-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2019-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2020-01-01"),linetype=3) +
+  theme_minimal() +
+  #theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+  #     panel.background = element_blank(), axis.line = element_line(colour = "black"),
+  #     axis.text.x = element_text(angle=90)) +
+  #ylab("Comment Count") + 
+  xlab ("Article Publish Date") +
+  labs(title="Comment Count by Publish Date",caption = "30-day Avg. in blue")
 
+
+## Article count over time
+articles_time <- comments %>% 
+  select(Article_Title,Article_Date) %>% 
+  unique() %>%
+  arrange(Article_Date) %>% 
+  mutate(Article_count=row_number())
+#comments_time$trailing_30_avg <- zoo::rollmeanr(comments_time$n,k=30,fill=NA)
+
+ggplot(articles_time) +
+  geom_line(aes(x=Article_Date, y=Article_count), alpha=0.4, color="#636363") +
+  #geom_line(aes(x=Article_Date,y=n), alpha=0.4) +
+  #geom_point(aes(x=Article_Date, y=trailing_30_avg), color="#636363") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  #geom_line(aes(x=Article_Date, y=trailing_30_avg), color="#3182bd", size=1) +
+  geom_vline(xintercept = as.Date("2008-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2009-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2010-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2011-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2012-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2013-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2014-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2015-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2016-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2017-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2018-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2019-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2020-01-01"),linetype=3) +
+  theme_minimal() +
+  #theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+  #     panel.background = element_blank(), axis.line = element_line(colour = "black"),
+  #     axis.text.x = element_text(angle=90)) +
+  #ylab("Comment Count") + 
+  xlab ("Article Publish Date") +
+  labs(title="Comment Count by Publish Date",caption = "30-day Avg. in blue")
