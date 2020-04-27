@@ -1,0 +1,18 @@
+---
+title: "Natural Language Processing on Comments"
+author: "Ravi Solter, Alexander Traczyk"
+date: "4/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+I am just writing things to get a general layout for the site
+
+Breaking this shit up into sections with links:
+
+### [Scraping Commetns]()
+
+### [Sentiment Analysis]()

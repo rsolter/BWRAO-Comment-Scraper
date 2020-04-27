@@ -1,0 +1,1031 @@
+---
+title: "Sentiment Analysis"
+author: "Ravi Solter, Alexander Traczyk"
+date: "4/27/2020"
+output: html_document
+---
+
+```{r setup, include=F}
+library(reticulate)
+use_python("usr/local/bin/python")
+```
+
+```{python packages,message=F}
+import pandas as pd
+import nltk
+import numpy as np
+nltk.download('vader_lexicon')
+nltk.download('punkt')
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import nltk.classify.util
+from nltk.tokenize import word_tokenize
+nltk.download('averaged_perceptron_tagger')
+from nltk import ne_chunk
+from nltk.tag import pos_tag
+nltk.download('maxent_ne_chunker')
+nltk.download('words')
+
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+import plotly.io as pio
+import plotly.express as px
+```
+
+```{python comm_data, include=F}
+
+#Importing Comments
+df1 = pd.read_csv('Data/Comments1.csv')
+df2 = pd.read_csv('Data/Comments2.csv')
+df3 = pd.read_csv('Data/Comments3.csv')
+df4 = pd.read_csv('Data/Comments4.csv')
+df5 = pd.read_csv('Data/Comments5.csv')
+df6 = pd.read_csv('Data/Comments6.csv')
+
+#Joining
+comments = pd.concat([df1,df2,df3,df4,df5,df6])
+comments.columns = ['Article_Title','Article_Author','Article_Publish_Date','Comment_Title','Comment_Body',
+              'Comment_Poster','Comment_Date','Comment_Time','Comment_Recs']
+              
+#List of unique Article Titles
+names = comments.Article_Title.unique()
+```
+```{r comm_data_r,include=F}
+df1 <- read.csv('Data/Comments1.csv')
+df2 <- read.csv('Data/Comments2.csv')
+df3 <- read.csv('Data/Comments3.csv')
+df4 <- read.csv('Data/Comments4.csv')
+df5 <- read.csv('Data/Comments5.csv')
+df6 <- read.csv('Data/Comments6.csv')
+
+comments <- do.call('rbind',list(df1,df2,df3,df4,df5,df6))
+rm(df1,df2,df3,df4,df5,df6)
+```
+
+### Finding the Overall Sentiment by Article
+
+
+The Sentiment Intensity Analyzer (SID) function provides the weighted scores for negative, neutral, and postitive words. It then gives a compound range from -1 to 1 for overall scores of negative and positive (respectfully)
+
+```{python sid}
+#Initialize the Vader Sentiment Tool
+sid = SentimentIntensityAnalyzer()
+```
+
+An example of a comment, and how it's scored by SID
+
+```{python sid_examp}
+#String pad to tripple ' for vader
+
+test = comments.iloc[9,4]
+scores = sid.polarity_scores(test)
+
+print(test)
+print(scores)
+```
+
+Now we let SID loop through every comment from BWRAO, saving its 'compound' or overall positive/negative score
+
+```{python overall_sent}
+#creating a loop to find the average compound scores for articles
+scores = []
+date = []
+ncomm = []
+
+for i in range(0,len(names)):
+    
+    if (i / 1000 == i // 1000) | (i == len(names)):
+        print(str(i)+' of '+str(len(names)))
+        
+    #filter comments to the appropriate article, save the number of comments
+    temp = comments[comments.Article_Title == names[i]]
+    ncomm.append(temp.shape[0])
+    
+    
+    if temp.shape[0] != 0:
+        temp_scores = []
+        for j in range(0,temp.shape[0]):
+            
+            #Grab comment
+            temp2 = temp.iloc[j,4]
+            
+            #if no comment (nan), make it an empty string
+            if type(temp2) == float:
+                temp2 = ""
+            
+            #removing leftovers from html
+            temp2 = temp2.replace('\r','').replace('\n',' ').replace('\p',' ')
+            
+            #find score and save score into a temporary array
+            temp2 = sid.polarity_scores(temp2)
+            temp_scores.append(temp2['compound'])      
+        
+    #Save the date, and average score of all comments
+    if type(temp.iloc[0,2]) != float: 
+        date.append(temp.iloc[0,2])
+    else:
+        date.append(temp.iloc[0,5])
+    scores.append(np.mean(temp_scores))
+```
+
+To make the information somewhat readable (there are around 630,000 comments total), we find a rolling average sentiment by 20 articles.
+
+```{python overall_sent_stuff,include=F}
+#Put it all into a dataframe
+average_sent = pd.DataFrame([names,scores,date,ncomm])
+average_sent = average_sent.T
+average_sent.columns = ['Article','Av_Score','Date','Number_of_Comments']
+
+#Sort by date
+average_sent['Date'] = pd.to_datetime(average_sent.Date)
+average_sent = average_sent.sort_values(by='Date')
+```
+
+
+We can look at how the overall sentiment on the website is over time:
+
+```{python ts_overall_sent,include=T,eval=F}
+#Plot it
+rolling_mean = average_sent.Av_Score.rolling(window=20).mean()
+
+pio.renderers
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=average_sent.Date,y=average_sent.Av_Score,name='Average Sentiment by Article',
+                       line=dict(color='blue')))
+fig.add_trace(go.Scatter(x=average_sent.Date,y=rolling_mean,name='Rolling Average [20]',
+                       line=dict(color='red')))
+fig.update_layout(legend_orientation="h",
+    autosize=True,
+)
+fig.show()
+```
+
+```{r}
+## rework that shit in R
+```
+
+As the blog has grown, the overall sentiment of the comments tends to hover around its average of 0.2. We see some relatively large outliers in the sentiment, especially after 2014. Looking at the top 10 most negative and positive articles by comments: (Note: I removed articles before 2008, as the variance in sentiment was pretty wild as there weren't many comments)
+
+```{python sent_sort,include=F}
+# Some of the most positive and negative articles:
+
+average_sent = average_sent[average_sent.Date > '2008-01-01'].sort_values(by='Av_Score')
+```
+
+Note: if you look for the articles by date on the site archive, it may be off by a day of the actual publication (because Python converts the date to my local time zone)
+
+#### Most Negative Articles:
+```{python sent_head}
+average_sent.head(10)
+```
+
+#### Most Poisitve Articles:
+```{python sent_tail}
+average_sent = average_sent.sort_values(by='Av_Score',ascending=False)
+
+average_sent.head(10)
+```
+
+
+From our most negative articles list, I have to give a shoutout to user "Suarez's Dentist" for writing a writhing comment hating on Fiorentina so much that it created the largest outlier in articles (can be read [here]( https://www.blackwhitereadallover.com/2015/12/13/10021950/juventus-fiorentina-live-stream-2015-serie-a-round-16-time-tv-schedule)).
+
+On the opposite end, big shoutouts to the positivity of users "Ricardo 1" and "JDAngkasa" for their combined positivity in our top article (read them [here]( https://www.blackwhitereadallover.com/2014/9/17/6260485/uefa-champions-league-juventus-malmo-final-score-match-report)), and just a little behind them "analyst therapist" with their comment (have a [look-e-loo]( https://www.blackwhitereadallover.com/2019/4/21/18509271/juventus-2-1-fiorentina-recap-reaction-eighth-straight-scudetto-title-allegri-comments-ronaldo-stays))
+
+Since most of the top articles only had a few comments, we redo our top 10 using only articles that have 10 or more comments. This should remove most of our outliers, and we can get a better idea of what events effected sentiment more.
+
+```{python sent_adj}
+#Redone with only articles that have more than 10 comments
+average_sent_adj = average_sent[average_sent.Number_of_Comments > 10]
+```
+
+```{python ts_overall_sent_adj,include=T, eval=F}
+average_sent_adj = average_sent_adj.sort_values(by='Date')
+
+rolling_mean = average_sent_adj.Av_Score.rolling(window=20).mean()
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=average_sent_adj.Date,y=average_sent_adj.Av_Score,name='Average Sentiment by Article (Adjusted)',
+                       line=dict(color='blue')))
+fig.add_trace(go.Scatter(x=average_sent_adj.Date,y=rolling_mean,name='Rolling Average [20]',
+                       line=dict(color='red')))
+fig.add_annotation(
+        x= pd.to_datetime("Jan 1, 2015"),
+        y=0.36,
+        xref="x",
+        yref="y",
+        text="Sturaro Joins Juve",
+        showarrow=True,
+        font=dict(
+            family="Courier New, monospace",
+            size=16,
+            color="#ffffff"
+            ),
+        align="center",
+        arrowhead=2,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor="red",
+        ax=20,
+        ay=-30,
+        bordercolor="black",
+        borderwidth=2,
+        borderpad=4,
+        bgcolor="red",
+        opacity=0.8
+        )
+fig.add_annotation(
+        x= pd.to_datetime("July 1, 2014"),
+        y=0.15,
+        xref="x",
+        yref="y",
+        text="Conte Resigns",
+        showarrow=True,
+        font=dict(
+            family="Courier New, monospace",
+            size=16,
+            color="#ffffff"
+            ),
+        align="center",
+        arrowhead=2,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor="red",
+        ax=20,
+        ay=30,
+        bordercolor="black",
+        borderwidth=2,
+        borderpad=4,
+        bgcolor="red",
+        opacity=0.8
+        )
+fig.add_annotation(
+        x= pd.to_datetime("Aug 10, 2012"),
+        y=0.1,
+        xref="x",
+        yref="y",
+        text="Cheating Scandal",
+        showarrow=True,
+        font=dict(
+            family="Courier New, monospace",
+            size=16,
+            color="#ffffff"
+            ),
+        align="center",
+        arrowhead=2,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor="red",
+        ax=0,
+        ay=50,
+        bordercolor="black",
+        borderwidth=2,
+        borderpad=4,
+        bgcolor="red",
+        opacity=0.8
+        )
+fig.add_annotation(
+        x= pd.to_datetime("May 10, 2019"),
+        y=0.3,
+        xref="x",
+        yref="y",
+        text="Allegri Resigns",
+        showarrow=True,
+        font=dict(
+            family="Courier New, monospace",
+            size=16,
+            color="#ffffff"
+            ),
+        align="center",
+        arrowhead=2,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor="red",
+        ax=-20,
+        ay=-60,
+        bordercolor="black",
+        borderwidth=2,
+        borderpad=4,
+        bgcolor="red",
+        opacity=0.8
+        )
+fig.update_layout(legend_orientation="h")
+fig.show()
+```
+
+#### Some Interesting Peaks/Troughs:
+Curiously for both champions league finals in June 2015, and 2017 sentiment increased until dropping after the finals, but not enough to be distincly different than the blogs average.
+
+##### Highs:
+* The average for the site occured November/December/January of 2014/15. This is likely for two reasons: Firstly, we turned around our results in the Champions League group stage (from losing two of the first three matches, to uqalifying from the group). Secondly, I can only assume us fans were getting fervent over the rumors of signing Stefano Sturaro
+* A peak in January of 2018 arose as Allegri made comments that "Juve had to improve", which led to commenters speculation on improving the team.
+* We see a similar peak in May/June of 2018 for much the same reasons. Although the club recorded it's seventh consecutive scudetto and fourth consecutive Coppa in those months, most of the positive comments occured during the blogs "Season Ratings" articles where users commented on their team desires going forward.
+* More recently, we saw a spike in sentiment in May of 2019 when Allegri left the club. Most comments were very supportive of his time at the club (deservedly so).
+
+##### Lows:
+* The lowest average sentiment occured in August of 2012 as the Calcioscommesse scandal rulings were given, and Conte receives a 10 month touchline ban
+* Just before the site's high, we had quite a drop in sentiment when Conte resigned, and Allegri was the rumored replacement (a lot of hate on him at first). It's interesting to note how commenters had two opposite reactions to the resignations of Conte and Allegri.
+
+We can also look at the most and least positive articles using only articles with more than 10 comments:
+
+#### Most Negative Articles (Adjusted):
+```{python sent_adj_head,include=F}
+average_sent_adj = average_sent_adj.sort_values(by='Av_Score')
+
+average_sent_adj.head(10)
+```
+
+#### Most Positive Articles (Adjusted):
+```{python sent_adj_tail, include=F}
+average_sent_adj = average_sent_adj.sort_values(by='Av_Score',ascending=False)
+
+average_sent_adj.head(10)
+```
+
+
+There are a few things to take away from these lists. To begin with, pretty much every article sits within $\pm 0.5$ of the sites average sentiment. More interesting is that for articles written sicne 2015 (to somewhat account for growth) eight of the ten most negative articles are from that time period, while only three of the most positive occur in the same time period.
+
+### Finding Players Mentioned in Comments
+Since we've seen how the comment sentiment for each article and how it's relatively stable, can we track how the sentiment for individual players has changed over time?
+
+To start, we create (and by create I mean stole) a function to extract the 'PERSON' or 'ORGANIZATION' from a comment. This is done by looking at the structure of a comment (explain this more) and by looking for capitalization.
+
+```{python pers_orgs_funct}
+
+from nltk import word_tokenize, pos_tag, ne_chunk
+from nltk import Tree
+
+def get_continuous_chunks(text, label):
+    chunked = ne_chunk(pos_tag(word_tokenize(text)))
+    prev = None
+    continuous_chunk = []
+    current_chunk = []
+
+    for subtree in chunked:
+        if type(subtree) == Tree and subtree.label() == label:
+            current_chunk.append(" ".join([token for token, pos in subtree.leaves()]))
+        elif current_chunk:
+            named_entity = " ".join(current_chunk)
+            if named_entity not in continuous_chunk:
+                continuous_chunk.append(named_entity)
+                current_chunk = []
+        else:
+            continue
+
+    return continuous_chunk
+```
+
+Looking at the first comment, we get an example of the people and organizations mentioned in it. Of note is how it can at times miss things based on the informal nature of blog comments.
+
+```{python pers_org_test}
+
+test = comments.iloc[0,4]
+test = test.replace('\r','').replace('\n',' ').replace('\p',' ')
+ne_tree = ne_chunk(pos_tag(word_tokenize(test)))
+
+print(test)
+#print(ne_tree)
+print(get_continuous_chunks(test, 'PERSON'))
+print(get_continuous_chunks(test, 'ORGANIZATION'))
+```
+
+Now we just run this through all of the comments to look at who's mentioned the most in all comments.
+
+```{python freq_count, include=T,eval=F}
+#Finds the frequerncy of names used in the comments
+#I wouldn't run this, it takes forever
+
+name_freq = pd.DataFrame([],columns = ['Name','Frequency'])
+
+for i in range(0,len(names)):
+    #Print to tell me where I am
+    if (i / 1000 == i // 1000) | (i == len(names)):
+        print(str(i)+' of '+str(len(names)))
+    
+    #Grab all the comments from an article. Make it one string, clean HTML elements
+    temp_art = comments[comments.Article_Title == names[i]]
+    temp_com = temp_art.Comment_Body.str.cat(sep='.')
+    temp_com = temp_com.replace('\r','').replace('\n',' ').replace('\p',' ')
+    
+    #Find people and orginizations mentioned, put in one unique list
+    pers = get_continuous_chunks(temp_com,'PERSON')
+    org = get_continuous_chunks(temp_com,'ORGINIZATION')
+    pers = pers + org
+    pers = list(set(pers))
+    
+    #If people/orgs list isn't empty
+    if (len(pers) != 0):
+        for j in range(0,len(pers)):
+            #see if the person already exists in my list
+            temp2 = name_freq[name_freq.Name == pers[j]]
+                
+            if (temp2.empty):
+                #if they don't exist, add them to the list, and the count of mentions
+                temp2 = pd.DataFrame([pers[j],temp_com.count(pers[j])]).T
+                temp2.columns = ['Name','Frequency']
+                name_freq = name_freq.append(temp2)
+            else:
+                #if they do exist, add the count found in this comment section
+                count = temp_com.count(pers[j])
+                index = name_freq.index[name_freq.Name == pers[j]][0]
+                name_freq.iloc[index,1] = name_freq.iloc[index,1] + count
+        
+        #reset the pandas indexing, becuase it's retarded
+        name_freq = name_freq.reset_index(drop=True)
+```
+
+Note: The previous code takes like 8 hours to run, so I just saved the results and load them up again to make things faster
+
+```{python load_freq}
+#Load the data from the last loop to make it faster
+name_freq = pd.read_csv('Data/Name_Freq.csv')
+```
+
+The top 30 most mentioned people/orginizations are as followed:
+
+```{python top_freq}
+#Top 30 names
+name_freq = name_freq.sort_values(by='Frequency',ascending=False)
+name_freq.head(30)
+```
+
+
+A few things of note:
+
+* Very few defenders made the list (Bonucci, Alex Sandro, and sorta Cuadrado)
+* More surprising is that the only player who's been a member of Juve for the entire history of the blog (Chiellini) doesn't make the list
+* At the opposite end a lot of strikers made the list (Dybala, Ronaldo, Higuain, Morata, Mandzukic), but few had any impact before the 2015/16 season (no love for Tevez)
+* Every manager since 2011/12 made the list (Conte, Allegri, Sarri). Even though he hasn't finished a season yet, Sarri likely makes the list because of his time at Napoli
+* Four time Serie A winner, human victory cigar, and club legend Stefano Sturaro doesn't make the list
+
+### Looking at Sentiment for the Most Mentioned Players
+
+From our list, we need to find comments that at some point mention our top 11 players by mentions in the comments (11 because I wanted to be sure to include Buffon and sexi boi Pirlo)
+
+```{python pre_player_sent,include=F}
+# Looking for top 11 players by mentions 
+comments['Dybala'] = np.zeros(len(comments))
+comments['Allegri'] = np.zeros(len(comments))
+comments['Pogba'] = np.zeros(len(comments))
+
+comments['Marchisio'] = np.zeros(len(comments))
+comments['Conte'] = np.zeros(len(comments))
+comments['Ronaldo'] = np.zeros(len(comments))
+
+comments['Pjanic'] = np.zeros(len(comments))
+comments['Bonucci'] = np.zeros(len(comments))
+comments['Higuain'] = np.zeros(len(comments))
+
+comments['Pirlo'] = np.zeros(len(comments))
+comments['Buffon'] = np.zeros(len(comments))
+```
+
+```{python player_mention_loop,include=T,eval=F}
+#loop through all the comments
+for i in range(0,len(comments)):
+    
+    if (i / 1000000 == i // 1000000) | (i == len(comments)-1):
+        print(str(i)+' of '+str(len(comments)))
+    
+    #grab the comment, make it upper
+    text = comments.iloc[i,4]
+    if(type(text) != float):
+        text = text.replace('\r','').replace('\n',' ').replace('\p',' ')
+        text = text.upper()
+    
+        #find the number of mentions for each of the top 11
+        num_dyb = text.count('DYBALA') + text.count(' JOYA ')
+        num_alli = text.count('ALLEGRI')
+        num_pog = text.count('POGBA')
+        num_march = text.count('MARCHISIO') + text.count('CLAUDIO')
+        num_conte = text.count('CONTE') + text.count('ANTONIO')
+        num_CR = text.count('RONALDO ') + text.count('CRISTIANO ')
+        num_pjan = text.count('PJANIC') + text.count(' MIRA ')
+        num_bon = text.count('BONUCCI') + text.count('LEO ') + text.count('LEONARDO ')
+        num_pork = text.count('HIGUAIN') + text.count('GONZALO')
+        num_pirlo = text.count('PIRLO')
+        num_buff = text.count('BUFFON') + text.count('GIGI')
+    
+        #save the number of mentions in the comment
+        if (num_dyb != 0):
+            comments.iloc[i,9] = num_dyb
+        if (num_alli != 0):
+            comments.iloc[i,10] = num_alli
+        if (num_pog != 0):
+            comments.iloc[i,11] = num_pog
+        if (num_march != 0):
+            comments.iloc[i,12] = num_march
+        if (num_conte != 0):
+            comments.iloc[i,13] = num_conte
+        if (num_CR != 0):
+            comments.iloc[i,14] = num_CR
+        if (num_pjan != 0):
+            comments.iloc[i,15] = num_pjan
+        if (num_bon != 0):
+            comments.iloc[i,16] = num_bon
+        if (num_pork != 0):
+            comments.iloc[i,17] = num_pork
+        if (num_pirlo != 0):
+            comments.iloc[i,18] = num_pirlo
+        if (num_buff != 0):
+            comments.iloc[i,19] = num_buff
+```
+
+```{python reload_player_mention, include=F}
+#Loading up the data from the loop so it doesn't have to run again
+top_used = pd.read_csv('Data/Top_Names_Used.csv')
+
+comments['Dybala'] = top_used['Dybala']
+comments['Allegri'] = top_used['Allegri']
+comments['Pogba'] = top_used['Pogba']
+comments['Marchisio'] = top_used['Marchisio']
+comments['Conte'] = top_used['Conte']
+comments['Ronaldo'] = top_used['Ronaldo']
+comments['Pjanic'] = top_used['Pjanic']
+comments['Bonucci'] = top_used['Bonucci']
+comments['Higuain'] = top_used['Higuain']
+comments['Pirlo'] = top_used['Pirlo']
+comments['Buffon'] = top_used['Buffon']
+```
+
+```{python player_sent}
+comms = top_used.index[(top_used.Dybala != 0) | (top_used.Allegri != 0) | (top_used.Pogba != 0) | (top_used.Marchisio != 0) | (
+    top_used.Bonucci != 0) | (top_used.Ronaldo != 0) | (top_used.Pjanic != 0) | (top_used.Conte != 0) | (
+    top_used.Higuain != 0) | (top_used.Pirlo != 0) | (top_used.Buffon != 0)]
+
+#Replace usage in comments with sentiment
+for i in range(0,len(comms)):
+    if (i / 20000 == i // 20000) | (i == len(comms)-1):
+        print(str(i)+' of '+str(len(comms)))
+    
+    index = comms[i]
+    if(type(comments.iloc[index,4]) == float):
+        comments.iloc[index,4] = ""
+        
+    text = comments.iloc[index,4].replace('\r','').replace('\n',' ').replace('\p',' ')
+    score = sid.polarity_scores(text)
+    score = score['compound']
+        
+    if (top_used.iloc[index,0] != 0):
+        comments.iloc[index,9] = score
+    if (top_used.iloc[index,1] != 0):
+        comments.iloc[index,10] = score
+    if (top_used.iloc[index,2] != 0):
+        comments.iloc[index,11] = score
+    if (top_used.iloc[index,3] != 0):
+        comments.iloc[index,12] = score
+    if (top_used.iloc[index,4] != 0):
+        comments.iloc[index,13] = score
+    if (top_used.iloc[index,5] != 0):
+        comments.iloc[index,14] = score
+    if (top_used.iloc[index,6] != 0):
+        comments.iloc[index,15] = score
+    if (top_used.iloc[index,7] != 0):
+        comments.iloc[index,16] = score
+    if (top_used.iloc[index,8] != 0):
+        comments.iloc[index,17] = score
+    if (top_used.iloc[index,9] != 0):
+        comments.iloc[index,18] = score
+    if (top_used.iloc[index,10] != 0):
+        comments.iloc[index,19] = score
+```
+
+```{python player_sent_shit, include=F}
+dybala = comments.iloc[(top_used.index[top_used.Dybala != 0]),:]
+dybala = dybala[['Dybala','Comment_Date']]
+allegri = comments.iloc[(top_used.index[top_used.Allegri != 0]),:]
+allegri = allegri[['Allegri','Comment_Date']]
+pogba = comments.iloc[(top_used.index[top_used.Pogba != 0]),:]
+pogba = pogba[['Pogba','Comment_Date']]
+marchisio = comments.iloc[(top_used.index[top_used.Marchisio != 0]),:]
+marchisio = marchisio[['Marchisio','Comment_Date']]
+conte = comments.iloc[(top_used.index[top_used.Conte != 0]),:]
+conte = conte[['Conte','Comment_Date']]
+ronaldo = comments.iloc[(top_used.index[top_used.Ronaldo != 0]),:]
+ronaldo = ronaldo[['Ronaldo','Comment_Date']]
+pjanic = comments.iloc[(top_used.index[top_used.Pjanic != 0]),:]
+pjanic = pjanic[['Pjanic','Comment_Date']]
+bonucci = comments.iloc[(top_used.index[top_used.Bonucci != 0]),:]
+bonucci = bonucci[['Bonucci','Comment_Date']]
+higuain = comments.iloc[(top_used.index[top_used.Higuain != 0]),:]
+higuain = higuain[['Higuain','Comment_Date']]
+pirlo = comments.iloc[(top_used.index[top_used.Pirlo != 0]),:]
+pirlo = pirlo[['Pirlo','Comment_Date']]
+buffon = comments.iloc[(top_used.index[top_used.Buffon != 0]),:]
+buffon = buffon[['Buffon','Comment_Date']]
+
+dybala['Comment_Date'] = pd.to_datetime(dybala.Comment_Date)
+dybala = dybala.sort_values(by='Comment_Date')
+dybala['Average'] = dybala.Dybala.rolling(window=100).mean()
+
+allegri['Comment_Date'] = pd.to_datetime(allegri.Comment_Date)
+allegri = allegri.sort_values(by='Comment_Date')
+allegri['Average'] = allegri.Allegri.rolling(window=100).mean()
+
+pogba['Comment_Date'] = pd.to_datetime(pogba.Comment_Date)
+pogba = pogba.sort_values(by='Comment_Date')
+pogba['Average'] = pogba.Pogba.rolling(window=100).mean()
+
+marchisio['Comment_Date'] = pd.to_datetime(marchisio.Comment_Date)
+marchisio = marchisio.sort_values(by='Comment_Date')
+marchisio['Average'] = marchisio.Marchisio.rolling(window=100).mean()
+
+conte['Comment_Date'] = pd.to_datetime(conte.Comment_Date)
+conte = conte.sort_values(by='Comment_Date')
+conte['Average'] = conte.Conte.rolling(window=100).mean()
+
+ronaldo['Comment_Date'] = pd.to_datetime(ronaldo.Comment_Date)
+ronaldo = ronaldo.sort_values(by='Comment_Date')
+ronaldo['Average'] = ronaldo.Ronaldo.rolling(window=100).mean()
+
+
+pjanic['Comment_Date'] = pd.to_datetime(pjanic.Comment_Date)
+pjanic = pjanic.sort_values(by='Comment_Date')
+pjanic['Average'] = pjanic.Pjanic.rolling(window=100).mean()
+
+bonucci['Comment_Date'] = pd.to_datetime(bonucci.Comment_Date)
+bonucci = bonucci.sort_values(by='Comment_Date')
+bonucci['Average'] = bonucci.Bonucci.rolling(window=100).mean()
+
+higuain['Comment_Date'] = pd.to_datetime(higuain.Comment_Date)
+higuain = higuain.sort_values(by='Comment_Date')
+higuain['Average'] = higuain.Higuain.rolling(window=100).mean()
+
+pirlo['Comment_Date'] = pd.to_datetime(pirlo.Comment_Date)
+pirlo = pirlo.sort_values(by='Comment_Date')
+pirlo['Average'] = pirlo.Pirlo.rolling(window=100).mean()
+
+buffon['Comment_Date'] = pd.to_datetime(buffon.Comment_Date)
+buffon = buffon.sort_values(by='Comment_Date')
+buffon['Average'] = buffon.Buffon.rolling(window=100).mean()
+```
+
+
+We can first compare all the people against each other using boxplots:
+
+```{python player_sent_box, include=T,eval=F}
+
+fig = go.Figure()
+fig.add_trace(go.Box(y=dybala['Dybala'], boxmean='sd' ,name="Dybala"))
+fig.add_trace(go.Box(y=allegri['Allegri'], boxmean='sd', name='Allegri' ))
+fig.add_trace(go.Box(y=pogba['Pogba'], boxmean='sd',name='Pogba' ))
+fig.add_trace(go.Box(y=marchisio['Marchisio'], boxmean='sd' ,name='Marchisio'))
+fig.add_trace(go.Box(y=conte['Conte'], boxmean='sd' ,name='Conte'))
+fig.add_trace(go.Box(y=ronaldo['Ronaldo'], boxmean='sd', name='Ronaldo'))
+fig.add_trace(go.Box(y=pjanic['Pjanic'], boxmean='sd' ,name='Pjanic'))
+fig.add_trace(go.Box(y=bonucci['Bonucci'], boxmean='sd' ,name='Bonucci'))
+fig.add_trace(go.Box(y=higuain['Higuain'], boxmean='sd' ,name='Higuain'))
+fig.add_trace(go.Box(y=pirlo['Pirlo'], boxmean='sd' ,name='Pirlo'))
+fig.add_trace(go.Box(y=buffon['Buffon'], boxmean='sd' ,name='Buffon'))
+fig.update_layout(showlegend=False)
+fig.show()
+```
+
+
+Although they all seem relatively similar (since all out sentiments are bound between -1 and 1), we can still gain a few insights:
+
+*The people with the highest means are Pirlo (0.393), Pogba (0.384) ,and Marchisio (0.373)
+*Those with the lowest means were Allegri (0.335), Higuain (0.327), and Bonucci (0.326)
+*Those with the smallest standard deviation (or most consistent sentiment) are Pogba (0.55), Dybala (0.551), Pjanic (0.556)
+*The opposite end (highest sd, bigger variation in sentiment): Ronaldo (0.583), Conte (0.595), Allegri (0.596)
+
+From just this basic information we can build general pictures of how readers react to players. For instance Higuain had a lower mean of 0.327 and a lower standard deviation of 0.558, meaning he was generally consitently more poorly rated (at least than those on this list)
+
+We can also see some general trends:
+
+*All proper midfielders on the list (meaning I'm not counting Dybala) are on average higher rated.
+*All managers have a high standard deviation, meaning they received both a lot of praise and hate (in fact, Allegri is the only person to have a lower quartile below zero)
+
+We should now look at the sentiment of each person over time, by plotting a rolling average (over 100 comments) time series. From my initial observations the sentiment for people stayed around their overall average. They would tend to see dips in sentiment over various reasons (explained more below), but you weren't likely to see individual peaks in sentiment (just returning to their average).
+
+```{python player_sent_fig1, include=T,eval=F}
+fig = make_subplots(rows=3, cols=1,
+                   shared_xaxes=True, 
+                   subplot_titles=("Dybala", "Allegri", "Pogba"))
+fig.append_trace(go.Scatter(x=dybala.Comment_Date,y=dybala.Average,name='Dybala',
+                       line=dict(color='red')), row=1, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("June 4, 2015"),y0=-1,
+            x1=pd.to_datetime("June 4, 2015"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=1,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("April 11, 2017")],
+    y=[0.4],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["3-0 Barca"],
+    textposition="top center",
+    line =dict(color="blue"),
+),row=1,col=1)
+
+fig.append_trace(go.Scatter(x=allegri.Comment_Date,y=allegri.Average,name='Allegri',
+                       line=dict(color='orange')), row=2, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 16, 2014"),y0=-1,
+            x1=pd.to_datetime("July 16, 2014"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=2,col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("May 17, 2019"),y0=-1,
+            x1=pd.to_datetime("May 17, 2019"),y1=1,
+            line=dict(color="Red",width=1,dash="dashdot",),row=2,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("Nov 1, 2014"),pd.to_datetime("Sept 10, 2015"),pd.to_datetime("Nov 5, 2018")],
+    y=[0.13,0,0,0],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["Athleti & Olymp","Poor Start","1-2 ManUre"],
+    textposition="bottom center",
+),row=2,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("March 5, 2016")],
+    y=[0],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["2-4 Bayern"],
+    textposition="top center",
+    line=dict(color='red'),
+),row=2,col=1)
+
+fig.append_trace(go.Scatter(x=pogba.Comment_Date,y=pogba.Average,name='Pogba',
+                       line=dict(color='green')), row=3, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 3, 2012"),y0=-1,
+            x1=pd.to_datetime("July 3, 2012"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=3,col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("Aug 8, 2016"),y0=-1,
+            x1=pd.to_datetime("Aug 8, 2016"),y1=1,
+            line=dict(color="Red",width=1,dash="dashdot",),row=3,col=1)
+fig.update_layout(showlegend=False)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("April 15, 2013"),pd.to_datetime("May 15, 2015")],
+    y=[0.6,0.6],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["1-0 Bolgna","Injury Return"],
+    textposition="top center",
+),row=3,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("Nov 1, 2014")],
+    y=[0.1],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["Athleti & Olymp"],
+    textposition="bottom center",
+    line=dict(color="red"),
+),row=3,col=1)
+fig.show()
+```
+
+#### First Takeaways:
+
+##### Dybala 
+* Dybala is a a player where individual performances don't seem to effect their overall rating (Marchisio and Pjanic also exibit this behavior).
+* For instance, what I consider his best performance (3-0 Barcelona in April 2017) doesn't seem to have a noticeable change in sentiment
+
+##### Allegri:
+* Allegri definitively seemed to take the brunt of poor performances near the begining of his tenure as manager (typically corresponding with results in the champions league).
+* These dips include 0-1 losses to Athletico and Olympiakos in November 2014, a poor start to the 2015/16 season (hovered in the teens), 2-4 loss to Bayern in March 2016.
+* Into the later parts of his tenure, just a single loss (such as the 1-2 loss to Manchester United in November 2018) would destroy his sentiment.
+
+##### Pogba:
+* Pogba, much like Dybala typically hovered around around his average. Opposed to most players, his noticeable differences are peaks instead of troughs (which is even more odd considering he has the highest overall average).
+* These peaks occured around 1-0 Bologna in April 2013 (scored the only goal). His heighest peaks on May and August of 2014 don't seem to correspond with anything in particular. On his return from injury in May 2015 (scoring against Cagliari in a 1-1 draw to secure the title, assists in the 1-1 draw against Madrid, and 2-1 victory against Lazio)
+* Like Allegri before him, he had a large dip for the 1-0 losses to Athletico and Olympiakos in November of 2014
+* He is the first player to show sellers remorse/blinded by nostalgia, as most player who's left at some point in their careers get an increase in sentiment
+
+```{python player_sent_fig2,include=T,eval=F}
+fig = make_subplots(rows=3, cols=1,
+                   shared_xaxes=True, 
+                   subplot_titles=("Marchisio","Conte","Ronaldo"))
+
+fig.append_trace(go.Scatter(x=marchisio.Comment_Date,y=marchisio.Average,name='Marchisio',
+                       line=dict(color='blue')), row=1, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("Aug 17, 2018"),y0=-1,
+            x1=pd.to_datetime("Aug 17, 2018"),y1=1,
+            line=dict(color="Red",width=1,dash="dashdot",),row=1,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("May 5, 2012"),pd.to_datetime("April 5, 2013")],
+    y=[0.4,0.55],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["1st Title","2nd Title"],
+    textposition="top center"
+),row=1,col=1)
+
+fig.append_trace(go.Scatter(x=conte.Comment_Date,y=conte.Average,name='Conte',
+                       line=dict(color='indigo')), row=2, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("May 22, 2011"),y0=-1,
+            x1=pd.to_datetime("May 22, 2011"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=2,col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("Aug 14, 2014"),y0=-1,
+            x1=pd.to_datetime("Aug 14, 2014"),y1=1,
+            line=dict(color="Red",width=1,dash="dashdot",),row=2,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("March 20, 2012")],
+    y=[0],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["5 Draws"],
+    textposition="bottom center"
+),row=2,col=1)
+fig.add_trace(go.Scatter(
+    x=[ pd.to_datetime("August 1, 2012")],
+    y=[0.5],
+    mode="markers+text",
+    name="Markers and Text",
+    text=[ "Touchline Ban"],
+    textposition="top center"
+),row=2,col=1)
+
+fig.append_trace(go.Scatter(x=ronaldo.Comment_Date,y=ronaldo.Average,name='Ronaldo',
+                       line=dict(color='gold')), row=3, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 10, 2018"),y0=-1,
+            x1=pd.to_datetime("July 10, 2018"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=3,col=1)
+fig.add_trace(go.Scatter(
+    x=[ pd.to_datetime("April 3, 2018")],
+    y=[0.5],
+    mode="markers+text",
+    name="Markers and Text",
+    text=[ "THAT goal"],
+    textposition="top center"
+),row=3,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("Sept 19, 2018")],
+    y=[0],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["Valencia Red Card"],
+    textposition="bottom center"
+),row=3,col=1)
+fig.update_layout(showlegend=False)
+fig.show()
+```
+
+#### Some Takeaways:
+
+##### Marchisio:
+* Claudio is interesting mostly for a lack of changes based on individual performances, but showed a definitive seasonality in his earlier seasons. He go from a season low to a season high as the season ended (March/April/May mathematically for most seasons).
+* These lows to highs include 2009/10 (7th), 2010/11 (7th), 2011/12 (1st), 2012/13 (1st), 2013/14 (1st), 2014/15 (1st)
+* At the begining of 2016, he mostly stabilized at around 0.3 sentiment.
+
+##### Conte:
+* Conte had two massive dips in sentiment while managing Juve:
+* The first in March 2012 (corresponding five draws in a row [4 Serie A, 1 Copa])
+* The second in August 2012 lines up with the Calcioscommesse scandal, and his touchline ban
+* No clue why his sentiment dropped so much in October 2018
+
+##### Ronaldo:
+* Before joining Juve, rather decently admired
+* "That" goal in April 2018 against Juve tanked his sentiment
+* His sending off against Valencia in September 2018 makes him one of the few people on this list to get negative sentiment at some point in their careers
+
+```{python player_sent_fig3,include=T,eval=F}
+fig = make_subplots(rows=3, cols=1,
+                   shared_xaxes=True, 
+                   subplot_titles=("Pjanic","Bonucci","Higuain","Pirlo","Buffon"))
+fig.append_trace(go.Scatter(x=pjanic.Comment_Date,y=pjanic.Average,name='Pjanic',
+                       line=dict(color='violet')), row=1, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("June 13, 2016"),y0=-1,
+            x1=pd.to_datetime("June 13, 2016"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=1,col=1)
+
+fig.append_trace(go.Scatter(x=bonucci.Comment_Date,y=bonucci.Average,name='Bonucci',
+                       line=dict(color='grey')), row=2, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 1, 2010"),y0=-1,
+            x1=pd.to_datetime("July 1, 2010"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=2,col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 14, 2017"),y0=-1,
+            x1=pd.to_datetime("July 14, 2017"),y1=1,
+            line=dict(color="Red",width=1,dash="dashdot",),row=2,col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("Aug 2, 2018"),y0=-1,
+            x1=pd.to_datetime("Aug 2, 2018"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=2,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("March 20, 2012"),pd.to_datetime("Jan 1, 2013"),pd.to_datetime("April 16, 2019")],
+    y=[0,0.25,-0.5],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["5 Draws","1-2 Samp","1-2 Ajax"],
+    textposition="bottom center"
+),row=2,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("August 1, 2012"),pd.to_datetime("Feb 17, 2017")],
+    y=[0.25,0.25],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["Cheating Accusation","Allegri Argument"],
+    textposition="top center"
+),row=2,col=1)
+
+
+fig.append_trace(go.Scatter(x=higuain.Comment_Date,y=higuain.Average,name='Higuain',
+                       line=dict(color='black')), row=3, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 26, 2016"),y0=-1,
+            x1=pd.to_datetime("July 26, 2016"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=3,col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("Aug 2, 2018"),y0=-1,
+            x1=pd.to_datetime("Aug 2, 2018"),y1=1,
+            line=dict(color="Red",width=1,dash="dashdot",),row=3,col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 1, 2019"),y0=-1,
+            x1=pd.to_datetime("July 1, 2019"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=3,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("Aug 2, 2018")],
+    y=[0.4],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["Milan Loan"],
+    textposition="top center"
+),row=3,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("Jan 15, 2019")],
+    y=[0.2],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["Chelsea Loan"],
+    textposition="bottom center"
+),row=3,col=1)
+
+fig.update_layout(showlegend=False)
+fig.show()
+```
+
+#### More Takeaways:
+
+##### Pjanic:
+* Mira's sentiment seems to be much like himself as a player: dependably good, nothing spectacular
+
+##### Bonucci:
+* Bonucci seems to take a lot of blame over his career, flirting with negative sentiment a few times in his career
+* These times in order: March 2012 (During the 5 draws in a row), August 2012 (Calcioscommesse scandal accusation, and aquittal), January 2013 (1-2 loss to 10 man Sampdoria), Dec 2016 (injury in 3-1 loss to Genoa), February 2016 (argument with Allegri leading to fine)
+* The only player from the top 11 who actually managed to get well into the negatives at some point. Seems like he took most of the blame for the April 2019 loss to Ajax
+
+##### Higuain:
+* Even with his good start at Juve during the 2016/17, his sentiment was mixed (if not slightly lower than most players)
+* Sellers remorse seemed to kick in at the start of both his loans during 2018/19
+
+```{python player_sent_fig4, eval=FALSE, include=T}
+fig = make_subplots(rows=2, cols=1,
+                   shared_xaxes=True, 
+                   subplot_titles=("Pirlo","Buffon"))
+fig.append_trace(go.Scatter(x=pirlo.Comment_Date,y=pirlo.Average,name='Pirlo',
+                       line=dict(color='magenta')), row=1, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 1, 2011"),y0=-1,
+            x1=pd.to_datetime("July 1, 2011"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=1,col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 6, 2015"),y0=-1,
+            x1=pd.to_datetime("July 6, 2015"),y1=1,
+            line=dict(color="Red",width=1,dash="dashdot",),row=1,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("May 15, 2012")],
+    y=[0.56],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["0-2 Napoli"],
+    textposition="top center"
+),row=1,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("Nov 1, 2014")],
+    y=[0.1],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["CL loses"],
+    textposition="bottom center"
+),row=1,col=1)
+
+fig.append_trace(go.Scatter(x=buffon.Comment_Date,y=buffon.Average,name='Buffon',
+                       line=dict(color='#bcbd22')), row=2, col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 6, 2018"),y0=-1,
+            x1=pd.to_datetime("July 6, 2018"),y1=1,
+            line=dict(color="Red",width=1,dash="dashdot",),row=2,col=1)
+fig.add_shape(type="line",x0=pd.to_datetime("July 4, 2019"),y0=-1,
+            x1=pd.to_datetime("July 4, 2019"),y1=1,
+            line=dict(color="Blue",width=1,dash="dashdot",),row=2,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("Dec 1, 2010"),pd.to_datetime("May 1,2018"),pd.to_datetime("Nov 1, 2019")],
+    y=[0.65,0.5,0.6],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["Injury","Thrashcan Heart","Record Apps"],
+    textposition="top center"
+),row=2,col=1)
+fig.add_trace(go.Scatter(
+    x=[pd.to_datetime("March 1, 2011")],
+    y=[0.1],
+    mode="markers+text",
+    name="Markers and Text",
+    text=["Returned"],
+    textposition="bottom center"
+),row=2,col=1)
+fig.update_layout(showlegend=False)
+fig.show()
+```
+
+
+#### The "I Miss the Good Old Days" Takeaways:
+
+##### Pirlo:
+* Curiously, Pirlo had a peak right around the 0-2 loss to Napoli in Copa Italia in May 2012
+* Midway through the 2012/13 season his sentiment increased overall (from 0.3 to 0.5)
+* Had a big dip in October 2014. My guess due to 0-1 losses to both Athletico and Olympiakos in the champions league (injured for the first game, came off early in the second)
+
+##### Buffon:
+* A career high in sentiment in November through December of 2010 (this ocurred during a injury to Buffon, where Storari lead the team to a number of lackluster draws and losses [1-1 Brescia, 1-1 Roma, 1-1 Fiorentina,1-4 Parma,0-3 Napoli])
+* This then turned into a career low from January through March of 2011 as the results got worse when he returned from injury [1-2 Palermo,0-2 Lecce (And a red card), 2-1 Udinese,0-1 Milan (and an error leading to goal)]
+* After his sending off against Real in April 2018, he quickly got back fan favor for his "thrashcan heart" statement
+* A nice final increase in sentiment just for his record 513th league appearance for Juve

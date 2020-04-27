@@ -1,0 +1,11 @@
+name: "bwrao-comment-scraoe"
+output_dir: "."
+navbar:
+  title: "Natural Language Processing on site comments"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Scraping Comments"
+      href: scrape.html
+    - text: "Sentiment Analysis"
+      href: sent.html
