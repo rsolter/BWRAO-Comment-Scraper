@@ -24,6 +24,13 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.5.1/htmlwidgets.js"></script>
+<script src="site_libs/plotly-binding-4.9.0/plotly.js"></script>
+<script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="site_libs/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.0.0/js/crosstalk.min.js"></script>
+<link href="site_libs/plotly-htmlwidgets-css-1.46.1/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="site_libs/plotly-main-1.46.1/plotly-latest.min.js"></script>
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -296,7 +303,6 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">Sentiment Analysis</h1>
 <h4 class="author">Ravi Solter, Alexander Traczyk</h4>
-<h4 class="date">4/27/2020</h4>
 
 </div>
 
@@ -404,10 +410,7 @@ for i in range(0,len(names)):
 ## 5000 of 5214</code></pre>
 <p>To make the information somewhat readable (there are around 630,000 comments total), we find a rolling average sentiment by 20 articles.</p>
 <p>We can look at how the overall sentiment on the website is over time:</p>
-<pre class="python"><code>#Plot it
-rolling_mean = average_sent.Av_Score.rolling(window=20).mean()
-
-pio.renderers
+<pre class="python"><code>pio.renderers
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=average_sent.Date,y=average_sent.Av_Score,name=&#39;Average Sentiment by Article&#39;,
                        line=dict(color=&#39;blue&#39;)))
@@ -417,54 +420,26 @@ fig.update_layout(legend_orientation=&quot;h&quot;,
     autosize=True,
 )
 fig.show()</code></pre>
-<pre class="r"><code>## rework that shit in R</code></pre>
+<iframe src="Plots/sent_by_art.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 <p>As the blog has grown, the overall sentiment of the comments tends to hover around its average of 0.2. We see some relatively large outliers in the sentiment, especially after 2014. Looking at the top 10 most negative and positive articles by comments: (Note: I removed articles before 2008, as the variance in sentiment was pretty wild as there weren’t many comments)</p>
 <p>Note: if you look for the articles by date on the site archive, it may be off by a day of the actual publication (because Python converts the date to my local time zone)</p>
 <div id="most-negative-articles" class="section level4">
 <h4>Most Negative Articles:</h4>
-<pre class="python"><code>average_sent.head(10)</code></pre>
-<pre><code>##                                                 Article  ... Number_of_Comments
-## 2567  Juventus vs. Fiorentina, 2015 Serie A, Round 1...  ...                  1
-## 2712            Allegri: Juventus have a long way to go  ...                  3
-## 2835             Marotta optimistic ahead of Supercoppa  ...                  1
-## 4399  Report: Giorgio Chiellini signing a contract e...  ...                  1
-## 2000  Report: Juventus interested in signing Croatia...  ...                  1
-## 1953  Genoa 1-0 Juventus: Luca Antonini&#39;s last-gasp ...  ...                  8
-## 4397  Juve, players reach agreement on salaries duri...  ...                 17
-## 4088  Juventus’ Gianluigi Buffon, Paulo Dybala among...  ...                  4
-## 2865     Allegri relieved with Juventus win over Chievo  ...                  3
-## 3542        May’s Monthly Juventus Thoughts: Award Tour  ...                  8
-## 
-## [10 rows x 4 columns]</code></pre>
+<iframe src="Plots/most_neg_art.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 </div>
 <div id="most-poisitve-articles" class="section level4">
 <h4>Most Poisitve Articles:</h4>
-<pre class="python"><code>average_sent = average_sent.sort_values(by=&#39;Av_Score&#39;,ascending=False)
-
-average_sent.head(10)</code></pre>
-<pre><code>##                                                 Article  ... Number_of_Comments
-## 1927  Carlos Tévez ends goal drought to secure Juven...  ...                  2
-## 4910  Allegri: Juventus won Scudetto despite constan...  ...                  1
-## 4549  Sarri still unclear about handball rules, does...  ...                  1
-## 3920  Landmarks of Turin Awards: Juventus vs Barcelo...  ...                  1
-## 2400  Reports: Juventus set to extend Daniele Rugani...  ...                  3
-## 4434     Sarri: Only perspective is on tomorrow’s match  ...                  1
-## 3797  Allegri: Juventus took the right approach to t...  ...                  1
-## 2886    Allegri: Juve showed humility and great respect  ...                  1
-## 4455      Sarri: Juventus working on eliminating errors  ...                  4
-## 2535  Borussia Monchengladbach vs. Juventus: Champio...  ...                  2
-## 
-## [10 rows x 4 columns]</code></pre>
+<pre class="python"><code>average_sent = average_sent.sort_values(by=&#39;Av_Score&#39;,ascending=False)</code></pre>
+<iframe src="Plots/most_pos_art.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 <p>From our most negative articles list, I have to give a shoutout to user “Suarez’s Dentist” for writing a writhing comment hating on Fiorentina so much that it created the largest outlier in articles (can be read <a href="https://www.blackwhitereadallover.com/2015/12/13/10021950/juventus-fiorentina-live-stream-2015-serie-a-round-16-time-tv-schedule">here</a>).</p>
 <p>On the opposite end, big shoutouts to the positivity of users “Ricardo 1” and “JDAngkasa” for their combined positivity in our top article (read them <a href="https://www.blackwhitereadallover.com/2014/9/17/6260485/uefa-champions-league-juventus-malmo-final-score-match-report">here</a>), and just a little behind them “analyst therapist” with their comment (have a <a href="https://www.blackwhitereadallover.com/2019/4/21/18509271/juventus-2-1-fiorentina-recap-reaction-eighth-straight-scudetto-title-allegri-comments-ronaldo-stays">look-e-loo</a>)</p>
 <p>Since most of the top articles only had a few comments, we redo our top 10 using only articles that have 10 or more comments. This should remove most of our outliers, and we can get a better idea of what events effected sentiment more.</p>
 <pre class="python"><code>#Redone with only articles that have more than 10 comments
 average_sent_adj = average_sent[average_sent.Number_of_Comments &gt; 10]</code></pre>
-<pre class="python"><code>average_sent_adj = average_sent_adj.sort_values(by=&#39;Date&#39;)
-
-rolling_mean = average_sent_adj.Av_Score.rolling(window=20).mean()
-
-fig = go.Figure()
+<pre class="python"><code>fig = go.Figure()
 fig.add_trace(go.Scatter(x=average_sent_adj.Date,y=average_sent_adj.Av_Score,name=&#39;Average Sentiment by Article (Adjusted)&#39;,
                        line=dict(color=&#39;blue&#39;)))
 fig.add_trace(go.Scatter(x=average_sent_adj.Date,y=rolling_mean,name=&#39;Rolling Average [20]&#39;,
@@ -571,6 +546,8 @@ fig.add_annotation(
         )
 fig.update_layout(legend_orientation=&quot;h&quot;)
 fig.show()</code></pre>
+<iframe src="Plots/art_sent_adj_notes.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 </div>
 <div id="some-interesting-peakstroughs" class="section level4">
 <h4>Some Interesting Peaks/Troughs:</h4>
@@ -595,9 +572,13 @@ fig.show()</code></pre>
 </div>
 <div id="most-negative-articles-adjusted" class="section level4">
 <h4>Most Negative Articles (Adjusted):</h4>
+<iframe src="Plots/most_neg_art_adj.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 </div>
 <div id="most-positive-articles-adjusted" class="section level4">
 <h4>Most Positive Articles (Adjusted):</h4>
+<iframe src="Plots/most_pos_art_adj.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 <p>There are a few things to take away from these lists. To begin with, pretty much every article sits within <span class="math inline">\(\pm 0.5\)</span> of the sites average sentiment. More interesting is that for articles written sicne 2015 (to somewhat account for growth) eight of the ten most negative articles are from that time period, while only three of the most positive occur in the same time period.</p>
 </div>
 </div>
@@ -686,39 +667,9 @@ for i in range(0,len(names)):
 name_freq = pd.read_csv(&#39;Data/Name_Freq.csv&#39;)</code></pre>
 <p>The top 30 most mentioned people/orginizations are as followed:</p>
 <pre class="python"><code>#Top 30 names
-name_freq = name_freq.sort_values(by=&#39;Frequency&#39;,ascending=False)
-name_freq.head(30)</code></pre>
-<pre><code>##             Name  Frequency
-## 8           Juve     101949
-## 35529     Dybala      26674
-## 34      Juventus      24237
-## 4365     Allegri      22388
-## 34525      Pogba      19849
-## 30     Marchisio      18175
-## 1590       Conte      15112
-## 962      Ronaldo      13863
-## 16326     Pjanic      13227
-## 6127     Bonucci      12552
-## 103        Milan      12285
-## 19268    Higuain      11703
-## 850        Pirlo      11607
-## 23479      Vidal      10757
-## 19         Serie      10409
-## 35314   Cuadrado      10340
-## 17396    Khedira      10295
-## 36072     Morata      10219
-## 31        Buffon       9793
-## 46        Napoli       9009
-## 35841  Mandzukic       8894
-## 6359      Sandro       8428
-## 517        Barca       8301
-## 32       Serie A       8208
-## 963            D       8166
-## 47          Roma       8051
-## 34675        Max       7840
-## 2997      Bayern       7369
-## 9414     Marotta       7332
-## 35100      Sarri       7117</code></pre>
+name_freq = name_freq.sort_values(by=&#39;Frequency&#39;,ascending=False)</code></pre>
+<iframe src="Plots/freq_tab.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 <p>A few things of note:</p>
 <ul>
 <li>Very few defenders made the list (Bonucci, Alex Sandro, and sorta Cuadrado)</li>
@@ -840,6 +791,8 @@ fig.add_trace(go.Box(y=pirlo[&#39;Pirlo&#39;], boxmean=&#39;sd&#39; ,name=&#39;P
 fig.add_trace(go.Box(y=buffon[&#39;Buffon&#39;], boxmean=&#39;sd&#39; ,name=&#39;Buffon&#39;))
 fig.update_layout(showlegend=False)
 fig.show()</code></pre>
+<iframe src="Plots/player_boxes.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 <p>Although they all seem relatively similar (since all out sentiments are bound between -1 and 1), we can still gain a few insights:</p>
 <p><em>The people with the highest means are Pirlo (0.393), Pogba (0.384) ,and Marchisio (0.373) </em>Those with the lowest means were Allegri (0.335), Higuain (0.327), and Bonucci (0.326) <em>Those with the smallest standard deviation (or most consistent sentiment) are Pogba (0.55), Dybala (0.551), Pjanic (0.556) </em>The opposite end (highest sd, bigger variation in sentiment): Ronaldo (0.583), Conte (0.595), Allegri (0.596)</p>
 <p>From just this basic information we can build general pictures of how readers react to players. For instance Higuain had a lower mean of 0.327 and a lower standard deviation of 0.558, meaning he was generally consitently more poorly rated (at least than those on this list)</p>
@@ -917,6 +870,8 @@ fig.add_trace(go.Scatter(
     line=dict(color=&quot;red&quot;),
 ),row=3,col=1)
 fig.show()</code></pre>
+<iframe src="Plots/player_sent_1.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 <div id="first-takeaways" class="section level4">
 <h4>First Takeaways:</h4>
 <div id="dybala" class="section level5">
@@ -1198,7 +1153,7 @@ fig.show()</code></pre>
 <h5>Buffon:</h5>
 <ul>
 <li>A career high in sentiment in November through December of 2010 (this ocurred during a injury to Buffon, where Storari lead the team to a number of lackluster draws and losses [1-1 Brescia, 1-1 Roma, 1-1 Fiorentina,1-4 Parma,0-3 Napoli])</li>
-<li>This then turned into a career low from January through March of 2011 as the results got worse when he returned from injury [1-2 Palermo,0-2 Lecce (And a red card), 2-1 Udinese,0-1 Milan (and an error leading to goal)]</li>
+<li>This then turned into a career low from January through March of 2011 as the results got worse when he returned from injury [1-2 Palermo, 0-2 Lecce (And a red card), 2-1 Udinese, 0-1 Milan (and an error leading to goal)]</li>
 <li>After his sending off against Real in April 2018, he quickly got back fan favor for his “thrashcan heart” statement</li>
 <li>A nice final increase in sentiment just for his record 513th league appearance for Juve</li>
 </ul>

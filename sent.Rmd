@@ -1,7 +1,6 @@
 ---
 title: "Sentiment Analysis"
 author: "Ravi Solter, Alexander Traczyk"
-date: "4/27/2020"
 output: html_document
 ---
 
@@ -10,7 +9,7 @@ library(reticulate)
 use_python("usr/local/bin/python")
 ```
 
-```{python packages,message=F}
+```{python packages, message=FALSE, warning=F}
 import pandas as pd
 import nltk
 import numpy as np
@@ -48,17 +47,6 @@ comments.columns = ['Article_Title','Article_Author','Article_Publish_Date','Com
               
 #List of unique Article Titles
 names = comments.Article_Title.unique()
-```
-```{r comm_data_r,include=F}
-df1 <- read.csv('Data/Comments1.csv')
-df2 <- read.csv('Data/Comments2.csv')
-df3 <- read.csv('Data/Comments3.csv')
-df4 <- read.csv('Data/Comments4.csv')
-df5 <- read.csv('Data/Comments5.csv')
-df6 <- read.csv('Data/Comments6.csv')
-
-comments <- do.call('rbind',list(df1,df2,df3,df4,df5,df6))
-rm(df1,df2,df3,df4,df5,df6)
 ```
 
 ### Finding the Overall Sentiment by Article
@@ -143,10 +131,11 @@ average_sent = average_sent.sort_values(by='Date')
 
 We can look at how the overall sentiment on the website is over time:
 
-```{python ts_overall_sent,include=T,eval=F}
+```{python ts_overall_sent,include=F}
 #Plot it
 rolling_mean = average_sent.Av_Score.rolling(window=20).mean()
-
+```
+```{python, include=T, eval=F}
 pio.renderers
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=average_sent.Date,y=average_sent.Av_Score,name='Average Sentiment by Article',
@@ -158,10 +147,29 @@ fig.update_layout(legend_orientation="h",
 )
 fig.show()
 ```
+```{r,include=F, message=F,warning=F}
+library(plotly)
+average_sent <- py$average_sent
+rolling_mean <- py$rolling_mean
+fig <- plot_ly(average_sent, x=~average_sent$Date,y=~as.numeric(average_sent$Av_Score), name = 'Average Sentiment by Article', line = list(color='blue'),type='scatter',mode='lines')
+fig <- fig %>% add_trace(y=~rolling_mean, name= 'Rolling Average [20]', line = list(color='red'))
+fig <- fig %>% layout(legend = list(orientation = 'h'),
+                      xaxis = list(title = 'Date'),
+                      yaxis = list(title='Sentiment'),
+                      title='Sentiment By Article')
 
-```{r}
-## rework that shit in R
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/sent_by_art.html")
 ```
+<iframe src="Plots/sent_by_art.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 As the blog has grown, the overall sentiment of the comments tends to hover around its average of 0.2. We see some relatively large outliers in the sentiment, especially after 2014. Looking at the top 10 most negative and positive articles by comments: (Note: I removed articles before 2008, as the variance in sentiment was pretty wild as there weren't many comments)
 
@@ -174,17 +182,89 @@ average_sent = average_sent[average_sent.Date > '2008-01-01'].sort_values(by='Av
 Note: if you look for the articles by date on the site archive, it may be off by a day of the actual publication (because Python converts the date to my local time zone)
 
 #### Most Negative Articles:
-```{python sent_head}
-average_sent.head(10)
+```{r,include=F,message=F,warning=F}
+top <- py$average_sent
+top <- top[1:10,]
+top$Av_Score <- round(as.numeric(top$Av_Score),3)
+
+fig <- plot_ly(
+  type = 'table',
+  header = list(
+    values = c("Article","Average Sentiment","Date","Number of Comments"),
+  align = c('left', rep('center', ncol(top))),
+    line = list(color = '#506784'),
+    fill = list(color = '#119DFF'),
+    align = c('left','center'),
+    font = list(color = 'white', size = 12)
+  ),
+  cells = list(
+    values = list(
+      top$Article,
+      top$Av_Score,
+      top$Date,
+      top$Number_of_Comments
+    ),
+    line = list(color = '#506784'),
+    align = c('left', 'center'),
+    font = list(color = c('#506784'), size = 12)
+  ))
+
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/most_neg_art.html")
 ```
+<iframe src="Plots/most_neg_art.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 #### Most Poisitve Articles:
 ```{python sent_tail}
 average_sent = average_sent.sort_values(by='Av_Score',ascending=False)
-
-average_sent.head(10)
 ```
+```{r,include=F,message=F,warning=F}
+top <- py$average_sent
+top <- top[1:10,]
+top$Av_Score <- round(as.numeric(top$Av_Score),3)
 
+fig <- plot_ly(
+  type = 'table',
+  header = list(
+    values = c("Article","Average Sentiment","Date","Number of Comments"),
+  align = c('left', rep('center', ncol(top))),
+    line = list(color = '#506784'),
+    fill = list(color = '#119DFF'),
+    align = c('left','center'),
+    font = list(color = 'white', size = 12)
+  ),
+  cells = list(
+    values = list(
+      top$Article,
+      top$Av_Score,
+      top$Date,
+      top$Number_of_Comments
+    ),
+    line = list(color = '#506784'),
+    align = c('left', 'center'),
+    font = list(color = c('#506784'), size = 12)
+  ))
+
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/most_pos_art.html")
+```
+<iframe src="Plots/most_pos_art.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 From our most negative articles list, I have to give a shoutout to user "Suarez's Dentist" for writing a writhing comment hating on Fiorentina so much that it created the largest outlier in articles (can be read [here]( https://www.blackwhitereadallover.com/2015/12/13/10021950/juventus-fiorentina-live-stream-2015-serie-a-round-16-time-tv-schedule)).
 
@@ -197,11 +277,12 @@ Since most of the top articles only had a few comments, we redo our top 10 using
 average_sent_adj = average_sent[average_sent.Number_of_Comments > 10]
 ```
 
-```{python ts_overall_sent_adj,include=T, eval=F}
+```{python ts_overall_sent_adj,include=F}
 average_sent_adj = average_sent_adj.sort_values(by='Date')
 
 rolling_mean = average_sent_adj.Av_Score.rolling(window=20).mean()
-
+```
+```{python,include=T,eval=F}
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=average_sent_adj.Date,y=average_sent_adj.Av_Score,name='Average Sentiment by Article (Adjusted)',
                        line=dict(color='blue')))
@@ -310,6 +391,15 @@ fig.add_annotation(
 fig.update_layout(legend_orientation="h")
 fig.show()
 ```
+<iframe src="Plots/art_sent_adj_notes.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 #### Some Interesting Peaks/Troughs:
 Curiously for both champions league finals in June 2015, and 2017 sentiment increased until dropping after the finals, but not enough to be distincly different than the blogs average.
@@ -329,17 +419,90 @@ We can also look at the most and least positive articles using only articles wit
 #### Most Negative Articles (Adjusted):
 ```{python sent_adj_head,include=F}
 average_sent_adj = average_sent_adj.sort_values(by='Av_Score')
-
-average_sent_adj.head(10)
 ```
+```{r,include=F,message=F,warning=F}
+top <- py$average_sent_adj
+top <- top[1:10,]
+top$Av_Score <- round(as.numeric(top$Av_Score),3)
+
+fig <- plot_ly(
+  type = 'table',
+  header = list(
+    values = c("Article","Average Sentiment","Date","Number of Comments"),
+  align = c('left', rep('center', ncol(top))),
+    line = list(color = '#506784'),
+    fill = list(color = '#119DFF'),
+    align = c('left','center'),
+    font = list(color = 'white', size = 12)
+  ),
+  cells = list(
+    values = list(
+      top$Article,
+      top$Av_Score,
+      top$Date,
+      top$Number_of_Comments
+    ),
+    line = list(color = '#506784'),
+    align = c('left', 'center'),
+    font = list(color = c('#506784'), size = 12)
+  ))
+
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/most_neg_art_adj.html")
+```
+<iframe src="Plots/most_neg_art_adj.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 #### Most Positive Articles (Adjusted):
 ```{python sent_adj_tail, include=F}
 average_sent_adj = average_sent_adj.sort_values(by='Av_Score',ascending=False)
-
-average_sent_adj.head(10)
 ```
+```{r,include=F,message=F,warning=F}
+top <- py$average_sent_adj
+top <- top[1:10,]
+top$Av_Score <- round(as.numeric(top$Av_Score),3)
 
+fig <- plot_ly(
+  type = 'table',
+  header = list(
+    values = c("Article","Average Sentiment","Date","Number of Comments"),
+  align = c('left', rep('center', ncol(top))),
+    line = list(color = '#506784'),
+    fill = list(color = '#119DFF'),
+    align = c('left','center'),
+    font = list(color = 'white', size = 12)
+  ),
+  cells = list(
+    values = list(
+      top$Article,
+      top$Av_Score,
+      top$Date,
+      top$Number_of_Comments
+    ),
+    line = list(color = '#506784'),
+    align = c('left', 'center'),
+    font = list(color = c('#506784'), size = 12)
+  ))
+
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/most_pos_art_adj.html")
+```
+<iframe src="Plots/most_pos_art_adj.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 There are a few things to take away from these lists. To begin with, pretty much every article sits within $\pm 0.5$ of the sites average sentiment. More interesting is that for articles written sicne 2015 (to somewhat account for growth) eight of the ten most negative articles are from that time period, while only three of the most positive occur in the same time period.
 
@@ -444,9 +607,44 @@ The top 30 most mentioned people/orginizations are as followed:
 ```{python top_freq}
 #Top 30 names
 name_freq = name_freq.sort_values(by='Frequency',ascending=False)
-name_freq.head(30)
 ```
+```{r,include=F,message=F,warning=F}
+top <- py$name_freq
+top <- top[1:30,]
 
+fig <- plot_ly(
+  type = 'table',
+  header = list(
+    values = c("Rank","Name","Frequency"),
+  align = c('left', rep('center', ncol(top))),
+    line = list(color = '#506784'),
+    fill = list(color = '#119DFF'),
+    align = c('left','center'),
+    font = list(color = 'white', size = 12)
+  ),
+  cells = list(
+    values = list(
+      seq(1,30),
+      top$Name,
+      top$Frequency
+    ),
+    line = list(color = '#506784'),
+    align = c('left', 'center'),
+    font = list(color = c('#506784'), size = 12)
+  ))
+
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/freq_tab.html")
+```
+<iframe src="Plots/freq_tab.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 A few things of note:
 
@@ -678,7 +876,46 @@ fig.add_trace(go.Box(y=buffon['Buffon'], boxmean='sd' ,name='Buffon'))
 fig.update_layout(showlegend=False)
 fig.show()
 ```
+```{r, include=F}
+dybala <- py$dybala
+allegri <- py$allegri
+pogba <- py$pogba
+marchisio <- py$marchisio
+conte <- py$conte
+ronaldo <- py$ronaldo
+pjanic <- py$pjanic
+bonucci <- py$bonucci
+higuain <- py$higuain
+pirlo <- py$pirlo
+buffon <- py$buffon
 
+fig <- plot_ly(y= dybala$Dybala,type='box',name='Dybala',boxmean = "sd")
+fig <- fig %>% add_trace(y= allegri$Allegri,name='Allegri',boxmean = "sd")
+fig <- fig %>% add_trace(y= pogba$Pogba,name='Pogba',boxmean = "sd")
+fig <- fig %>% add_trace(y= marchisio$Marchisio,name='Marchisio',boxmean = "sd")
+fig <- fig %>% add_trace(y= conte$Conte,name='Conte',boxmean = "sd")
+fig <- fig %>% add_trace(y= ronaldo$Ronaldo,name='Ronaldo',boxmean = "sd")
+fig <- fig %>% add_trace(y= pjanic$Pjanic,name='Pjanic',boxmean = "sd")
+fig <- fig %>% add_trace(y= bonucci$Bonucci,name='Bonucci',boxmean = "sd")
+fig <- fig %>% add_trace(y= higuain$Higuain,name='Higuain',boxmean = "sd")
+fig <- fig %>% add_trace(y= pirlo$Pirlo,name='Pirlo',boxmean = "sd")
+fig <- fig %>% add_trace(y= buffon$Buffon,name='Buffon',boxmean = "sd")
+fig <- fig %>% layout(
+  showlegend = F
+)
+
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/player_boxes.html")
+```
+<iframe src="Plots/player_boxes.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="400"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 Although they all seem relatively similar (since all out sentiments are bound between -1 and 1), we can still gain a few insights:
 
@@ -769,10 +1006,120 @@ fig.add_trace(go.Scatter(
 ),row=3,col=1)
 fig.show()
 ```
+```{r, include=F, warning=F}
+a <- list(
+  x = c("2017-6-4"),
+  y = c(0.4),
+  text = c('3-0 Barca'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = 20,
+  ay = -40
+)
+
+fig1 <- plot_ly(x=dybala$Comment_Date,y=dybala$Average,name='Dybala',type='scatter',mode='lines',
+                line = list(color='red')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Dybala",
+    x = 0.5,
+    y = 1.5,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  ) %>%
+  add_segments(x = "2015-6-4", xend = "2015-6-4", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  layout(annotations = a)
+
+b <- list(
+  x = c("2014-11-1","2015-10-10","2018-11-8","2016-3-17"),
+  y = c(0.13,0,0,0),
+  text = c('Athleti & Olymp','Poor Start','1-2 ManUre','2-4 Bayern'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = c(-20,0,20,30),
+  ay = c(20,10,10,15)
+)
+
+fig2 <- plot_ly(x=allegri$Comment_Date,y=allegri$Average,name='Allegri',type='scatter',mode='lines',
+                line = list(color='orange')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Allegri",
+    x = 0.5,
+    y = 1.5,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  )%>%
+  add_segments(x = "2014-7-16", xend = "2014-7-16", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  add_segments(x = "2019-5-17", xend = "2019-5-17", y = -1, yend = 1,line=list(color='red',dash='dash')) %>%
+  layout(annotations=b)
+
+c <- list(
+  x = c("2013-5-15","2015-5-13","2014-10-23"),
+  y = c(0.6,0.6,0.1),
+  text = c('1-0 Bolgna','Injurn Return','Athleti & Olymp'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = c(20,0,0),
+  ay = c(-20,-20,20)
+)
+fig3 <- plot_ly(x=pogba$Comment_Date,y=pogba$Average,name='Pogba',type='scatter',mode='lines',
+                line = list(color='yellow')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Pogba",
+    x = 0.5,
+    y = 1.5,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  )%>%
+  add_segments(x = "2012-7-3", xend = "2012-7-3", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  add_segments(x = "2016-8-8", xend = "2016-8-8", y = -1, yend = 1,line=list(color='red',dash='dash')) %>%
+  layout(annotations=c)
+
+
+
+fig <- subplot(fig1,fig2,fig3,nrows=3,shareX=T,titleX=T,margin = 0.07) %>%
+  layout(
+    showlegend = F,
+    xaxis = list(title="Date"),
+    yaxis = list(title="Sentiment"),
+    margin = list(t=100)
+)
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/player_sent_1.html")
+```
+<iframe src="Plots/player_sent_1.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 #### First Takeaways:
 
-##### Dybala 
+##### Dybala: 
 * Dybala is a a player where individual performances don't seem to effect their overall rating (Marchisio and Pjanic also exibit this behavior).
 * For instance, what I consider his best performance (3-0 Barcelona in April 2017) doesn't seem to have a noticeable change in sentiment
 
@@ -1026,6 +1373,6 @@ fig.show()
 
 ##### Buffon:
 * A career high in sentiment in November through December of 2010 (this ocurred during a injury to Buffon, where Storari lead the team to a number of lackluster draws and losses [1-1 Brescia, 1-1 Roma, 1-1 Fiorentina,1-4 Parma,0-3 Napoli])
-* This then turned into a career low from January through March of 2011 as the results got worse when he returned from injury [1-2 Palermo,0-2 Lecce (And a red card), 2-1 Udinese,0-1 Milan (and an error leading to goal)]
+* This then turned into a career low from January through March of 2011 as the results got worse when he returned from injury [1-2 Palermo, 0-2 Lecce (And a red card), 2-1 Udinese, 0-1 Milan (and an error leading to goal)]
 * After his sending off against Real in April 2018, he quickly got back fan favor for his "thrashcan heart" statement
 * A nice final increase in sentiment just for his record 513th league appearance for Juve
