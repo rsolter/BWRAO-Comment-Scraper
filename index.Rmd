@@ -1,7 +1,5 @@
 ---
 title: "Natural Language Processing on Comments"
-author: "Ravi Solter, Alexander Traczyk"
-date: "4/27/2020"
 output: html_document
 ---
 
@@ -9,10 +7,16 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-I am just writing things to get a general layout for the site
+This website is designed to showcase a project done by Ravi Solter and Alexander Traczyk as a way to show off our skills in python, web scraping, and natural language processing. As we are both Juventus fans, and avid readers of the blog [Black & Whtie & Read All Over](https://www.blackwhitereadallover.com/), we chose to scrape and analyse comment data from the site. You can follow the links provided below to see different sections of the project. 
 
-Breaking this shit up into sections with links:
+### [Scraping Comments](https://rsolter.github.io/BWRAO-Comment-Scraper/scrape.html)
 
-### [Scraping Commetns]()
+Using selenium to scrape comments
 
-### [Sentiment Analysis]()
+### [Sentiment Analysis](https://rsolter.github.io/BWRAO-Comment-Scraper/sent.html)
+
+Sentiment analysis of the website overall, and on individuals
+
+### [About Us](https://rsolter.github.io/BWRAO-Comment-Scraper/about.html)
+
+Learn about the cool cats who did the analysis

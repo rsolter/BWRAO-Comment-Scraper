@@ -931,7 +931,9 @@ We can also see some general trends:
 *All proper midfielders on the list (meaning I'm not counting Dybala) are on average higher rated.
 *All managers have a high standard deviation, meaning they received both a lot of praise and hate (in fact, Allegri is the only person to have a lower quartile below zero)
 
-We should now look at the sentiment of each person over time, by plotting a rolling average (over 100 comments) time series. From my initial observations the sentiment for people stayed around their overall average. They would tend to see dips in sentiment over various reasons (explained more below), but you weren't likely to see individual peaks in sentiment (just returning to their average).
+### Peoples Sentiment Over Time:
+
+We should now look at the sentiment of each person over time, by plotting a rolling average (over 100 comments) time series. From my initial observations the sentiment for people stayed around their overall average. They would tend to see dips in sentiment over various reasons (explained more below), but you weren't likely to see individual peaks in sentiment (just returning to their average). I have also showed each persons arrival (a blue line) and departure (red line) from the club.
 
 ```{python player_sent_fig1, include=T,eval=F}
 fig = make_subplots(rows=3, cols=1,
@@ -1078,7 +1080,7 @@ c <- list(
   ay = c(-20,-20,20)
 )
 fig3 <- plot_ly(x=pogba$Comment_Date,y=pogba$Average,name='Pogba',type='scatter',mode='lines',
-                line = list(color='yellow')) %>%
+                line = list(color='#B8860B')) %>%
   layout(  yaxis = list(range=c(-0.5,1))) %>%
   add_annotations(
     text = "Pogba",

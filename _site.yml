@@ -9,3 +9,5 @@ navbar:
       href: scrape.html
     - text: "Sentiment Analysis"
       href: sent.html
+    - text: "About Us"
+      href: about.html
