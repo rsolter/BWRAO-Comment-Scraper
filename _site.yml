@@ -1,7 +1,7 @@
 name: "bwrao-comment-scraoe"
 output_dir: "."
 navbar:
-  title: "Natural Language Processing on site comments"
+  title: "Natural Language Processing on Site Comments"
   left:
     - text: "Home"
       href: index.html

@@ -9,20 +9,17 @@ library(reticulate)
 use_python("usr/local/bin/python")
 ```
 
+Now that we have any data we need, we can move forward in the analysis. The purpose of this section is to perform sentiment analysis on both the blog as a whole, and on individuals at the club. To begin, we of course must load packages:
+
 ```{python packages, message=FALSE, warning=F}
 import pandas as pd
 import nltk
 import numpy as np
-nltk.download('vader_lexicon')
-nltk.download('punkt')
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk.classify.util
-from nltk.tokenize import word_tokenize
-nltk.download('averaged_perceptron_tagger')
 from nltk import ne_chunk
 from nltk.tag import pos_tag
-nltk.download('maxent_ne_chunker')
-nltk.download('words')
+nltk.download('vader_lexicon')
 
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -51,15 +48,16 @@ names = comments.Article_Title.unique()
 
 ### Finding the Overall Sentiment by Article
 
+To perform all of comment analysis on this page we use the Valence Aware Dictionary and sEntiment Reasoner (VADER), which is already built into the `nltk` package in python. This dictionary is specifically designed for use with social media text, and even takes into count the use of punctuation and emoticons when performing its sentiment score. Because of that, people familiar with most text analysis should take note that no tokenization or removal of stop words was necessary.
 
-The Sentiment Intensity Analyzer (SID) function provides the weighted scores for negative, neutral, and postitive words. It then gives a compound range from -1 to 1 for overall scores of negative and positive (respectfully)
+Performing sentiment analysis with VADER on a comment requires us to use the Sentiment Intensity Analyzer (SID) function provides the weighted scores for negative, neutral, and positive words. It then gives a compound range from -1 to 1 for overall scores of negative and positive (respectfully)
 
 ```{python sid}
 #Initialize the Vader Sentiment Tool
 sid = SentimentIntensityAnalyzer()
 ```
 
-An example of a comment, and how it's scored by SID
+An example of a comment, and how it's scored by SID:
 
 ```{python sid_examp}
 #String pad to tripple ' for vader
@@ -129,7 +127,7 @@ average_sent = average_sent.sort_values(by='Date')
 ```
 
 
-We can look at how the overall sentiment on the website is over time:
+We can look at how the overall sentiment on the website over time:
 
 ```{python ts_overall_sent,include=F}
 #Plot it
@@ -222,7 +220,7 @@ htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/m
     frameborder="0">
 </iframe>
 
-#### Most Poisitve Articles:
+#### Most Positive Articles:
 ```{python sent_tail}
 average_sent = average_sent.sort_values(by='Av_Score',ascending=False)
 ```
@@ -266,9 +264,9 @@ htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/m
     frameborder="0">
 </iframe>
 
-From our most negative articles list, I have to give a shoutout to user "Suarez's Dentist" for writing a writhing comment hating on Fiorentina so much that it created the largest outlier in articles (can be read [here]( https://www.blackwhitereadallover.com/2015/12/13/10021950/juventus-fiorentina-live-stream-2015-serie-a-round-16-time-tv-schedule)).
+From our most negative articles list, I have to give a shout-out to user "Suarez's Dentist" for writing a writhing comment hating on Fiorentina so much that it created the largest outlier in articles (can be read [here]( https://www.blackwhitereadallover.com/2015/12/13/10021950/juventus-fiorentina-live-stream-2015-serie-a-round-16-time-tv-schedule)).
 
-On the opposite end, big shoutouts to the positivity of users "Ricardo 1" and "JDAngkasa" for their combined positivity in our top article (read them [here]( https://www.blackwhitereadallover.com/2014/9/17/6260485/uefa-champions-league-juventus-malmo-final-score-match-report)), and just a little behind them "analyst therapist" with their comment (have a [look-e-loo]( https://www.blackwhitereadallover.com/2019/4/21/18509271/juventus-2-1-fiorentina-recap-reaction-eighth-straight-scudetto-title-allegri-comments-ronaldo-stays))
+On the opposite end, big shout-outs to the positivity of users "Ricardo 1" and "JDAngkasa" for their combined positivity in our top article (read them [here]( https://www.blackwhitereadallover.com/2014/9/17/6260485/uefa-champions-league-juventus-malmo-final-score-match-report)), and just a little behind them "analyst therapist" with their comment (have a [look-e-loo]( https://www.blackwhitereadallover.com/2019/4/21/18509271/juventus-2-1-fiorentina-recap-reaction-eighth-straight-scudetto-title-allegri-comments-ronaldo-stays))
 
 Since most of the top articles only had a few comments, we redo our top 10 using only articles that have 10 or more comments. This should remove most of our outliers, and we can get a better idea of what events effected sentiment more.
 
@@ -402,16 +400,16 @@ fig.show()
 </iframe>
 
 #### Some Interesting Peaks/Troughs:
-Curiously for both champions league finals in June 2015, and 2017 sentiment increased until dropping after the finals, but not enough to be distincly different than the blogs average.
+Curiously for both champions league finals in June 2015, and 2017 sentiment increased until dropping after the finals, but not enough to be distinctly different than the blogs average.
 
 ##### Highs:
-* The average for the site occured November/December/January of 2014/15. This is likely for two reasons: Firstly, we turned around our results in the Champions League group stage (from losing two of the first three matches, to uqalifying from the group). Secondly, I can only assume us fans were getting fervent over the rumors of signing Stefano Sturaro
+* The highs for the site occurred November/December/January of 2014/15. This is likely for two reasons: Firstly, we turned around our results in the Champions League group stage (from losing two of the first three matches, to qualifying from the group). Secondly, I can only assume us fans were getting fervent over the rumors of signing Stefano Sturaro
 * A peak in January of 2018 arose as Allegri made comments that "Juve had to improve", which led to commenters speculation on improving the team.
-* We see a similar peak in May/June of 2018 for much the same reasons. Although the club recorded it's seventh consecutive scudetto and fourth consecutive Coppa in those months, most of the positive comments occured during the blogs "Season Ratings" articles where users commented on their team desires going forward.
+* We see a similar peak in May/June of 2018 for much the same reasons. Although the club recorded it's seventh consecutive scudetto and fourth consecutive Coppa in those months, most of the positive comments occurred during the blogs "Season Ratings" articles where users commented on their team desires going forward.
 * More recently, we saw a spike in sentiment in May of 2019 when Allegri left the club. Most comments were very supportive of his time at the club (deservedly so).
 
 ##### Lows:
-* The lowest average sentiment occured in August of 2012 as the Calcioscommesse scandal rulings were given, and Conte receives a 10 month touchline ban
+* The lowest average sentiment occurred in August of 2012 as the Calcioscommesse scandal rulings were given, and Conte receives a 10 month touchline ban
 * Just before the site's high, we had quite a drop in sentiment when Conte resigned, and Allegri was the rumored replacement (a lot of hate on him at first). It's interesting to note how commenters had two opposite reactions to the resignations of Conte and Allegri.
 
 We can also look at the most and least positive articles using only articles with more than 10 comments:
@@ -504,12 +502,16 @@ htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/m
     frameborder="0">
 </iframe>
 
-There are a few things to take away from these lists. To begin with, pretty much every article sits within $\pm 0.5$ of the sites average sentiment. More interesting is that for articles written sicne 2015 (to somewhat account for growth) eight of the ten most negative articles are from that time period, while only three of the most positive occur in the same time period.
+There are a few things to take away from these lists. To begin with, pretty much every article sits within $\pm 0.5$ of the sites average sentiment. More interesting is that for articles written since 2015 (to somewhat account for growth) eight of the ten most negative articles are from that time period, while only three of the most positive occur in the same time period.
 
 ### Finding Players Mentioned in Comments
 Since we've seen how the comment sentiment for each article and how it's relatively stable, can we track how the sentiment for individual players has changed over time?
 
-To start, we create (and by create I mean stole) a function to extract the 'PERSON' or 'ORGANIZATION' from a comment. This is done by looking at the structure of a comment (explain this more) and by looking for capitalization.
+To start, we create (and by create I mean stole) a function to extract the 'PERSON' or 'ORGANIZATION' from a comment. This is mostly done through part-of-speech tagging. This tokenizes a comment into a hierarchy of sentence structure into their individual word types (such as adjective [JJ tag], proper noun [NNP], and verbs [VB]). Based on this hierarchy, we can extract the subjects of the comment.
+
+We extract both 'PERSON' and 'ORGANIZATION' to catch any mistranslations of the comment. For instance, there was a comment something to the effect of "Juve needs to talk to his manager". Although clearly Juve is an organization, since they can't actually speak, it was classified as a person.
+
+Although this method isn't perfect (NLP typically isn't), we just need a general idea of which people are mentioned the most by the blog, and fill find all comments which mention them later.
 
 ```{python pers_orgs_funct}
 
@@ -550,7 +552,7 @@ print(get_continuous_chunks(test, 'PERSON'))
 print(get_continuous_chunks(test, 'ORGANIZATION'))
 ```
 
-Now we just run this through all of the comments to look at who's mentioned the most in all comments.
+Now we just run this through all of the comments to look at who's mentioned the most in all comments. This list can be found in the [data folder](https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data) in the "Name_Freq.csv". Since this loop takes a few hours to run, I just load this data.
 
 ```{python freq_count, include=T,eval=F}
 #Finds the frequerncy of names used in the comments
@@ -595,14 +597,12 @@ for i in range(0,len(names)):
         name_freq = name_freq.reset_index(drop=True)
 ```
 
-Note: The previous code takes like 8 hours to run, so I just saved the results and load them up again to make things faster
-
 ```{python load_freq}
 #Load the data from the last loop to make it faster
 name_freq = pd.read_csv('Data/Name_Freq.csv')
 ```
 
-The top 30 most mentioned people/orginizations are as followed:
+The top 30 most mentioned people/organizations are as followed:
 
 ```{python top_freq}
 #Top 30 names
@@ -656,7 +656,7 @@ A few things of note:
 
 ### Looking at Sentiment for the Most Mentioned Players
 
-From our list, we need to find comments that at some point mention our top 11 players by mentions in the comments (11 because I wanted to be sure to include Buffon and sexi boi Pirlo)
+From our list, we need to find comments that at some point mention our top 11 players by mentions in the body (11 because I wanted to be sure to include Buffon and sexi boi Pirlo). This next loop goes through the body of the comment and just counts the number of times any of the top 11 people were mentioned in it. Even though people tend to get nicknames we found that very few made the list (other than "La Joya" for Dybala, and "Gigi" for Buffon), and therefore ignored most of them.
 
 ```{python pre_player_sent,include=F}
 # Looking for top 11 players by mentions 
@@ -726,6 +726,8 @@ for i in range(0,len(comments)):
         if (num_buff != 0):
             comments.iloc[i,19] = num_buff
 ```
+
+Since we now know which comments mention any of the top people, we run our SID function through these comments, saving the overall score. Since this looks at the entirety of a comment to find the sentiment we were worried that in especially long comments that mentioned a few people (for instance rating people after a match), they might be misrepresented by the sentiment (for example, a comment could say "I though Dybala was terrible, but Pirlo was ok". This would have an overall negative sentiment for both Dybala and Pirlo). When actually testing, we found that these misrepresentations didn't happen to all that much of an effect, and though that they still represented an overall picture of someones sentiment towards the club.
 
 ```{python reload_player_mention, include=F}
 #Loading up the data from the loop so it doesn't have to run again
@@ -857,7 +859,7 @@ buffon['Average'] = buffon.Buffon.rolling(window=100).mean()
 ```
 
 
-We can first compare all the people against each other using boxplots:
+We can first compare all the people against each other using box-plots:
 
 ```{python player_sent_box, include=T,eval=F}
 
@@ -911,7 +913,7 @@ htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/p
     style="max-width = 100%"
     sandbox="allow-same-origin allow-scripts"
     width="100%"
-    height="400"
+    height="350"
     scrolling="no"
     seamless="seamless"
     frameborder="0">
@@ -924,7 +926,7 @@ Although they all seem relatively similar (since all out sentiments are bound be
 *Those with the smallest standard deviation (or most consistent sentiment) are Pogba (0.55), Dybala (0.551), Pjanic (0.556)
 *The opposite end (highest sd, bigger variation in sentiment): Ronaldo (0.583), Conte (0.595), Allegri (0.596)
 
-From just this basic information we can build general pictures of how readers react to players. For instance Higuain had a lower mean of 0.327 and a lower standard deviation of 0.558, meaning he was generally consitently more poorly rated (at least than those on this list)
+From just this basic information we can build general pictures of how readers react to players. For instance Higuain had a lower mean of 0.327 and a lower standard deviation of 0.558, meaning he was generally consistently more poorly rated (at least than those on this list)
 
 We can also see some general trends:
 
@@ -994,7 +996,7 @@ fig.add_trace(go.Scatter(
     y=[0.6,0.6],
     mode="markers+text",
     name="Markers and Text",
-    text=["1-0 Bolgna","Injury Return"],
+    text=["1-0 Bologna","Injury Return"],
     textposition="top center",
 ),row=3,col=1)
 fig.add_trace(go.Scatter(
@@ -1071,7 +1073,7 @@ fig2 <- plot_ly(x=allegri$Comment_Date,y=allegri$Average,name='Allegri',type='sc
 c <- list(
   x = c("2013-5-15","2015-5-13","2014-10-23"),
   y = c(0.6,0.6,0.1),
-  text = c('1-0 Bolgna','Injurn Return','Athleti & Olymp'),
+  text = c('1-0 Bologna','Injury Return','Athleti & Olymp'),
   xref = "x",
   yref = "y",
   showarrow = TRUE,
@@ -1122,17 +1124,17 @@ htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/p
 #### First Takeaways:
 
 ##### Dybala: 
-* Dybala is a a player where individual performances don't seem to effect their overall rating (Marchisio and Pjanic also exibit this behavior).
+* Dybala is a a player where individual performances don't seem to effect their overall rating (Marchisio and Pjanic also exhibit this behavior).
 * For instance, what I consider his best performance (3-0 Barcelona in April 2017) doesn't seem to have a noticeable change in sentiment
 
 ##### Allegri:
-* Allegri definitively seemed to take the brunt of poor performances near the begining of his tenure as manager (typically corresponding with results in the champions league).
+* Allegri definitively seemed to take the brunt of poor performances near the beginning of his tenure as manager (typically corresponding with results in the champions league).
 * These dips include 0-1 losses to Athletico and Olympiakos in November 2014, a poor start to the 2015/16 season (hovered in the teens), 2-4 loss to Bayern in March 2016.
 * Into the later parts of his tenure, just a single loss (such as the 1-2 loss to Manchester United in November 2018) would destroy his sentiment.
 
 ##### Pogba:
 * Pogba, much like Dybala typically hovered around around his average. Opposed to most players, his noticeable differences are peaks instead of troughs (which is even more odd considering he has the highest overall average).
-* These peaks occured around 1-0 Bologna in April 2013 (scored the only goal). His heighest peaks on May and August of 2014 don't seem to correspond with anything in particular. On his return from injury in May 2015 (scoring against Cagliari in a 1-1 draw to secure the title, assists in the 1-1 draw against Madrid, and 2-1 victory against Lazio)
+* These peaks occurred around 1-0 Bologna in April 2013 (scored the only goal). His highest peaks on May and August of 2014 don't seem to correspond with anything in particular. On his return from injury in May 2015 (scoring against Cagliari in a 1-1 draw to secure the title, assists in the 1-1 draw against Madrid, and 2-1 victory against Lazio)
 * Like Allegri before him, he had a large dip for the 1-0 losses to Athletico and Olympiakos in November of 2014
 * He is the first player to show sellers remorse/blinded by nostalgia, as most player who's left at some point in their careers get an increase in sentiment
 
@@ -1204,13 +1206,122 @@ fig.add_trace(go.Scatter(
 fig.update_layout(showlegend=False)
 fig.show()
 ```
+```{r, include=F, warning=F}
+a <- list(
+  x = c("2012-5-5","2013-4-5"),
+  y = c(0.4,0.55),
+  text = c('1st Title','2nd Title'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = 20,
+  ay = -20
+)
+
+fig1 <- plot_ly(x=marchisio$Comment_Date,y=marchisio$Average,name='Marchisio',type='scatter',mode='lines',
+                line = list(color='blue')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Marchisio",
+    x = 0.5,
+    y = 1.5,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  ) %>%
+  add_segments(x = "2018-8-17", xend = "2018-8-17", y = -1, yend = 1,line=list(color='red',dash='dash')) %>%
+  layout(annotations = a)
+
+b <- list(
+  x = c("2012-3-20","2012-8-1"),
+  y = c(0,0.5),
+  text = c('5 Draws','Touchline Ban'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = c(-20,0),
+  ay = c(20,-20)
+)
+
+fig2 <- plot_ly(x=conte$Comment_Date,y=conte$Average,name='Conte',type='scatter',mode='lines',
+                line = list(color='indigo')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Conte",
+    x = 0.5,
+    y = 1.5,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  )%>%
+  add_segments(x = "2011-5-22", xend = "2011-5-22", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  add_segments(x = "2014-8-14", xend = "2014-8-14", y = -1, yend = 1,line=list(color='red',dash='dash')) %>%
+  layout(annotations=b)
+
+c <- list(
+  x = c("2018-4-3","2018-10-2"),
+  y = c(0.5,-0.14),
+  text = c('THAT Goal','Valencia Red Card'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = c(20,-10),
+  ay = c(-20,15)
+)
+fig3 <- plot_ly(x=ronaldo$Comment_Date,y=ronaldo$Average,name='Ronaldo',type='scatter',mode='lines',
+                line = list(color='gold')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Ronaldo",
+    x = 0.5,
+    y = 1.5,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  )%>%
+  add_segments(x = "2018-7-10", xend = "2018-7-10", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  layout(annotations=c)
+
+
+
+fig <- subplot(fig1,fig2,fig3,nrows=3,shareX=T,titleX=T,margin = 0.07) %>%
+  layout(
+    showlegend = F,
+    xaxis = list(title="Date"),
+    yaxis = list(title="Sentiment"),
+    margin = list(t=100)
+)
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/player_sent_2.html")
+```
+<iframe src="Plots/player_sent_2.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 #### Some Takeaways:
 
 ##### Marchisio:
 * Claudio is interesting mostly for a lack of changes based on individual performances, but showed a definitive seasonality in his earlier seasons. He go from a season low to a season high as the season ended (March/April/May mathematically for most seasons).
 * These lows to highs include 2009/10 (7th), 2010/11 (7th), 2011/12 (1st), 2012/13 (1st), 2013/14 (1st), 2014/15 (1st)
-* At the begining of 2016, he mostly stabilized at around 0.3 sentiment.
+* At the beginning of 2016, he mostly stabilized at around 0.3 sentiment.
 
 ##### Conte:
 * Conte had two massive dips in sentiment while managing Juve:
@@ -1293,6 +1404,105 @@ fig.add_trace(go.Scatter(
 fig.update_layout(showlegend=False)
 fig.show()
 ```
+```{r, include=F, warning=F}
+fig1 <- plot_ly(x=pjanic$Comment_Date,y=pjanic$Average,name='Pjanic',type='scatter',mode='lines',
+                line = list(color='violet')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Pjanic",
+    x = 0.5,
+    y = 1.5,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  ) %>%
+  add_segments(x = "2016-6-13", xend = "2016-6-13", y = -1, yend = 1,line=list(color='blue',dash='dash')) 
+
+b <- list(
+  x = c("2012-3-20","2013-1-1","2019-4-16","2012-8-1","2017-2-17"),
+  y = c(0,0.25,-0.44,0.25,0.25),
+  text = c('5 Draws','1-2 Samp','1-2 Ajax','Cheating Accusation','Allegri Argument'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = c(-20,0,-40,20,20),
+  ay = c(20,-30,0,-20,-20)
+)
+
+fig2 <- plot_ly(x=bonucci$Comment_Date,y=bonucci$Average,name='Bonucci',type='scatter',mode='lines',
+                line = list(color='grey')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Bonucci",
+    x = 0.5,
+    y = 1.5,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  ) %>%
+  add_segments(x = "2010-7-1", xend = "2010-7-1", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  add_segments(x = "2017-7-14", xend = "2017-7-14", y = -1, yend = 1,line=list(color='red',dash='dash')) %>%
+  add_segments(x = "2018-8-2", xend = "2018-8-2", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  layout(annotations = b)
+
+c <- list(
+  x = c("2018-8-2","2019-1-15"),
+  y = c(0.4,0.2),
+  text = c('Milan Loan','Chelsea Loan'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = c(-10,0),
+  ay = c(40,-30)
+)
+fig3 <- plot_ly(x=higuain$Comment_Date,y=higuain$Average,name='Higuain',type='scatter',mode='lines',
+                line = list(color='indigo')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Higuain",
+    x = 0.5,
+    y = 1.5,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  )%>%
+  add_segments(x = "2016-7-26", xend = "2016-7-26", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  add_segments(x = "2018-8-2", xend = "2018-8-2", y = -1, yend = 1,line=list(color='red',dash='dash')) %>%
+  add_segments(x = "2019-7-1", xend = "2019-7-1", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  layout(annotations=c)
+
+
+
+fig <- subplot(fig1,fig2,fig3,nrows=3,shareX=T,titleX=T,margin = 0.07) %>%
+  layout(
+    showlegend = F,
+    xaxis = list(title="Date"),
+    yaxis = list(title="Sentiment"),
+    margin = list(t=100)
+)
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/player_sent_3.html")
+```
+<iframe src="Plots/player_sent_3.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 #### More Takeaways:
 
@@ -1301,7 +1511,7 @@ fig.show()
 
 ##### Bonucci:
 * Bonucci seems to take a lot of blame over his career, flirting with negative sentiment a few times in his career
-* These times in order: March 2012 (During the 5 draws in a row), August 2012 (Calcioscommesse scandal accusation, and aquittal), January 2013 (1-2 loss to 10 man Sampdoria), Dec 2016 (injury in 3-1 loss to Genoa), February 2016 (argument with Allegri leading to fine)
+* These times in order: March 2012 (During the 5 draws in a row), August 2012 (Calcioscommesse scandal accusation, and acquittal), January 2013 (1-2 loss to 10 man Sampdoria), Dec 2016 (injury in 3-1 loss to Genoa), February 2016 (argument with Allegri leading to fine)
 * The only player from the top 11 who actually managed to get well into the negatives at some point. Seems like he took most of the blame for the April 2019 loss to Ajax
 
 ##### Higuain:
@@ -1350,7 +1560,7 @@ fig.add_trace(go.Scatter(
     y=[0.65,0.5,0.6],
     mode="markers+text",
     name="Markers and Text",
-    text=["Injury","Thrashcan Heart","Record Apps"],
+    text=["Injury","Trashcan Heart","Record Apps"],
     textposition="top center"
 ),row=2,col=1)
 fig.add_trace(go.Scatter(
@@ -1364,7 +1574,86 @@ fig.add_trace(go.Scatter(
 fig.update_layout(showlegend=False)
 fig.show()
 ```
+```{r, include=F, warning=F}
+a <- list(
+  x = c("2012-5-15","2014-11-1"),
+  y = c(0.56,0.1),
+  text = c('0-2 Napoli','CL Loses'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = c(20,-20),
+  ay = c(-20,20)
+)
 
+fig1 <- plot_ly(x=pirlo$Comment_Date,y=pirlo$Average,name='Pirlo',type='scatter',mode='lines',
+                line = list(color='magenta')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Pirlo",
+    x = 0.5,
+    y = 1.1,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  ) %>%
+  add_segments(x = "2011-7-1", xend = "2011-7-1", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  add_segments(x = "2015-7-6", xend = "2015-7-6", y = -1, yend = 1,line=list(color='red',dash='dash')) %>%
+  layout(annotations = a)
+
+b <- list(
+  x = c("2010-12-1","2018-5-1","2019-11-1","2011-3-1"),
+  y = c(0.65,0.5,0.6,0.1),
+  text = c('Injury','Trashcan Heart','Record Apps','Returned'),
+  xref = "x",
+  yref = "y",
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = c(-20,-20,-20,-20),
+  ay = c(-10,-15,-25,20)
+)
+
+fig2 <- plot_ly(x=buffon$Comment_Date,y=buffon$Average,name='Buffon',type='scatter',mode='lines',
+                line = list(color='#bcbd22')) %>%
+  layout(  yaxis = list(range=c(-0.5,1))) %>%
+  add_annotations(
+    text = "Buffon",
+    x = 0.5,
+    y = 1.1,
+    yref = "paper",
+    xref = "paper",
+    xanchor = "middle",
+    yanchor = "top",
+    showarrow = FALSE,
+    font = list(size = 15)
+  )%>%
+  add_segments(x = "2018-7-6", xend = "2018-7-6", y = -1, yend = 1,line=list(color='red',dash='dash')) %>%
+  add_segments(x = "2019-7-4", xend = "2019-7-4", y = -1, yend = 1,line=list(color='blue',dash='dash')) %>%
+  layout(annotations=b)
+
+fig <- subplot(fig1,fig2,nrows=2,shareX=T,titleX=T,margin = 0.07) %>%
+  layout(
+    showlegend = F,
+    xaxis = list(title="Date"),
+    yaxis = list(title="Sentiment"),
+    margin = list(t=100)
+)
+fig
+htmlwidgets::saveWidget(fig, "C:/Users/Alek/github/BWRAO-Comment-Scraper/Plots/player_sent_4.html")
+```
+<iframe src="Plots/player_sent_4.html"
+    style="max-width = 100%"
+    sandbox="allow-same-origin allow-scripts"
+    width="100%"
+    height="800"
+    scrolling="no"
+    seamless="seamless"
+    frameborder="0">
+</iframe>
 
 #### The "I Miss the Good Old Days" Takeaways:
 
@@ -1374,7 +1663,7 @@ fig.show()
 * Had a big dip in October 2014. My guess due to 0-1 losses to both Athletico and Olympiakos in the champions league (injured for the first game, came off early in the second)
 
 ##### Buffon:
-* A career high in sentiment in November through December of 2010 (this ocurred during a injury to Buffon, where Storari lead the team to a number of lackluster draws and losses [1-1 Brescia, 1-1 Roma, 1-1 Fiorentina,1-4 Parma,0-3 Napoli])
+* A career high in sentiment in November through December of 2010 (this occurred during a injury to Buffon, where Storari lead the team to a number of lackluster draws and losses [1-1 Brescia, 1-1 Roma, 1-1 Fiorentina,1-4 Parma,0-3 Napoli])
 * This then turned into a career low from January through March of 2011 as the results got worse when he returned from injury [1-2 Palermo, 0-2 Lecce (And a red card), 2-1 Udinese, 0-1 Milan (and an error leading to goal)]
-* After his sending off against Real in April 2018, he quickly got back fan favor for his "thrashcan heart" statement
+* After his sending off against Real in April 2018, he quickly got back fan favor for his "trashcan heart" statement
 * A nice final increase in sentiment just for his record 513th league appearance for Juve

@@ -276,7 +276,7 @@ $(document).ready(function () {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="index.html">Natural Language Processing on site comments</a>
+      <a class="navbar-brand" href="index.html">Natural Language Processing on Site Comments</a>
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
@@ -288,6 +288,9 @@ $(document).ready(function () {
 </li>
 <li>
   <a href="sent.html">Sentiment Analysis</a>
+</li>
+<li>
+  <a href="about.html">About Us</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -307,41 +310,20 @@ $(document).ready(function () {
 </div>
 
 
+<p>Now that we have any data we need, we can move forward in the analysis. The purpose of this section is to perform sentiment analysis on both the blog as a whole, and on individuals at the club. To begin, we of course must load packages:</p>
 <pre class="python"><code>import pandas as pd
 import nltk
 import numpy as np
+from nltk.sentiment.vader import SentimentIntensityAnalyzer</code></pre>
+<pre><code>## C:\PROGRA~3\ANACON~1\lib\site-packages\nltk\twitter\__init__.py:20: UserWarning: The twython library has not been installed. Some functionality from the twitter package will not be available.
+##   warnings.warn(&quot;The twython library has not been installed. &quot;</code></pre>
+<pre class="python"><code>import nltk.classify.util
+from nltk import ne_chunk
+from nltk.tag import pos_tag
 nltk.download(&#39;vader_lexicon&#39;)</code></pre>
 <pre><code>## [nltk_data] Downloading package vader_lexicon to
 ## [nltk_data]     C:\Users\Alek\AppData\Roaming\nltk_data...
 ## [nltk_data]   Package vader_lexicon is already up-to-date!
-## True</code></pre>
-<pre class="python"><code>nltk.download(&#39;punkt&#39;)</code></pre>
-<pre><code>## [nltk_data] Downloading package punkt to
-## [nltk_data]     C:\Users\Alek\AppData\Roaming\nltk_data...
-## [nltk_data]   Package punkt is already up-to-date!
-## True</code></pre>
-<pre class="python"><code>from nltk.sentiment.vader import SentimentIntensityAnalyzer</code></pre>
-<pre><code>## C:\PROGRA~3\ANACON~1\lib\site-packages\nltk\twitter\__init__.py:20: UserWarning: The twython library has not been installed. Some functionality from the twitter package will not be available.
-##   warnings.warn(&quot;The twython library has not been installed. &quot;</code></pre>
-<pre class="python"><code>import nltk.classify.util
-from nltk.tokenize import word_tokenize
-nltk.download(&#39;averaged_perceptron_tagger&#39;)</code></pre>
-<pre><code>## [nltk_data] Downloading package averaged_perceptron_tagger to
-## [nltk_data]     C:\Users\Alek\AppData\Roaming\nltk_data...
-## [nltk_data]   Package averaged_perceptron_tagger is already up-to-
-## [nltk_data]       date!
-## True</code></pre>
-<pre class="python"><code>from nltk import ne_chunk
-from nltk.tag import pos_tag
-nltk.download(&#39;maxent_ne_chunker&#39;)</code></pre>
-<pre><code>## [nltk_data] Downloading package maxent_ne_chunker to
-## [nltk_data]     C:\Users\Alek\AppData\Roaming\nltk_data...
-## [nltk_data]   Package maxent_ne_chunker is already up-to-date!
-## True</code></pre>
-<pre class="python"><code>nltk.download(&#39;words&#39;)</code></pre>
-<pre><code>## [nltk_data] Downloading package words to
-## [nltk_data]     C:\Users\Alek\AppData\Roaming\nltk_data...
-## [nltk_data]   Package words is already up-to-date!
 ## True</code></pre>
 <pre class="python"><code>from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -349,10 +331,11 @@ import plotly.io as pio
 import plotly.express as px</code></pre>
 <div id="finding-the-overall-sentiment-by-article" class="section level3">
 <h3>Finding the Overall Sentiment by Article</h3>
-<p>The Sentiment Intensity Analyzer (SID) function provides the weighted scores for negative, neutral, and postitive words. It then gives a compound range from -1 to 1 for overall scores of negative and positive (respectfully)</p>
+<p>To perform all of comment analysis on this page we use the Valence Aware Dictionary and sEntiment Reasoner (VADER), which is already built into the <code>nltk</code> package in python. This dictionary is specifically designed for use with social media text, and even takes into count the use of punctuation and emoticons when performing its sentiment score. Because of that, people familiar with most text analysis should take note that no tokenization or removal of stop words was necessary.</p>
+<p>Performing sentiment analysis with VADER on a comment requires us to use the Sentiment Intensity Analyzer (SID) function provides the weighted scores for negative, neutral, and positive words. It then gives a compound range from -1 to 1 for overall scores of negative and positive (respectfully)</p>
 <pre class="python"><code>#Initialize the Vader Sentiment Tool
 sid = SentimentIntensityAnalyzer()</code></pre>
-<p>An example of a comment, and how it’s scored by SID</p>
+<p>An example of a comment, and how it’s scored by SID:</p>
 <pre class="python"><code>#String pad to tripple &#39; for vader
 
 test = comments.iloc[9,4]
@@ -409,7 +392,7 @@ for i in range(0,len(names)):
 ## 4000 of 5214
 ## 5000 of 5214</code></pre>
 <p>To make the information somewhat readable (there are around 630,000 comments total), we find a rolling average sentiment by 20 articles.</p>
-<p>We can look at how the overall sentiment on the website is over time:</p>
+<p>We can look at how the overall sentiment on the website over time:</p>
 <pre class="python"><code>pio.renderers
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=average_sent.Date,y=average_sent.Av_Score,name=&#39;Average Sentiment by Article&#39;,
@@ -429,13 +412,13 @@ fig.show()</code></pre>
 <iframe src="Plots/most_neg_art.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
 </iframe>
 </div>
-<div id="most-poisitve-articles" class="section level4">
-<h4>Most Poisitve Articles:</h4>
+<div id="most-positive-articles" class="section level4">
+<h4>Most Positive Articles:</h4>
 <pre class="python"><code>average_sent = average_sent.sort_values(by=&#39;Av_Score&#39;,ascending=False)</code></pre>
 <iframe src="Plots/most_pos_art.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
 </iframe>
-<p>From our most negative articles list, I have to give a shoutout to user “Suarez’s Dentist” for writing a writhing comment hating on Fiorentina so much that it created the largest outlier in articles (can be read <a href="https://www.blackwhitereadallover.com/2015/12/13/10021950/juventus-fiorentina-live-stream-2015-serie-a-round-16-time-tv-schedule">here</a>).</p>
-<p>On the opposite end, big shoutouts to the positivity of users “Ricardo 1” and “JDAngkasa” for their combined positivity in our top article (read them <a href="https://www.blackwhitereadallover.com/2014/9/17/6260485/uefa-champions-league-juventus-malmo-final-score-match-report">here</a>), and just a little behind them “analyst therapist” with their comment (have a <a href="https://www.blackwhitereadallover.com/2019/4/21/18509271/juventus-2-1-fiorentina-recap-reaction-eighth-straight-scudetto-title-allegri-comments-ronaldo-stays">look-e-loo</a>)</p>
+<p>From our most negative articles list, I have to give a shout-out to user “Suarez’s Dentist” for writing a writhing comment hating on Fiorentina so much that it created the largest outlier in articles (can be read <a href="https://www.blackwhitereadallover.com/2015/12/13/10021950/juventus-fiorentina-live-stream-2015-serie-a-round-16-time-tv-schedule">here</a>).</p>
+<p>On the opposite end, big shout-outs to the positivity of users “Ricardo 1” and “JDAngkasa” for their combined positivity in our top article (read them <a href="https://www.blackwhitereadallover.com/2014/9/17/6260485/uefa-champions-league-juventus-malmo-final-score-match-report">here</a>), and just a little behind them “analyst therapist” with their comment (have a <a href="https://www.blackwhitereadallover.com/2019/4/21/18509271/juventus-2-1-fiorentina-recap-reaction-eighth-straight-scudetto-title-allegri-comments-ronaldo-stays">look-e-loo</a>)</p>
 <p>Since most of the top articles only had a few comments, we redo our top 10 using only articles that have 10 or more comments. This should remove most of our outliers, and we can get a better idea of what events effected sentiment more.</p>
 <pre class="python"><code>#Redone with only articles that have more than 10 comments
 average_sent_adj = average_sent[average_sent.Number_of_Comments &gt; 10]</code></pre>
@@ -551,20 +534,20 @@ fig.show()</code></pre>
 </div>
 <div id="some-interesting-peakstroughs" class="section level4">
 <h4>Some Interesting Peaks/Troughs:</h4>
-<p>Curiously for both champions league finals in June 2015, and 2017 sentiment increased until dropping after the finals, but not enough to be distincly different than the blogs average.</p>
+<p>Curiously for both champions league finals in June 2015, and 2017 sentiment increased until dropping after the finals, but not enough to be distinctly different than the blogs average.</p>
 <div id="highs" class="section level5">
 <h5>Highs:</h5>
 <ul>
-<li>The average for the site occured November/December/January of 2014/15. This is likely for two reasons: Firstly, we turned around our results in the Champions League group stage (from losing two of the first three matches, to uqalifying from the group). Secondly, I can only assume us fans were getting fervent over the rumors of signing Stefano Sturaro</li>
+<li>The highs for the site occurred November/December/January of 2014/15. This is likely for two reasons: Firstly, we turned around our results in the Champions League group stage (from losing two of the first three matches, to qualifying from the group). Secondly, I can only assume us fans were getting fervent over the rumors of signing Stefano Sturaro</li>
 <li>A peak in January of 2018 arose as Allegri made comments that “Juve had to improve”, which led to commenters speculation on improving the team.</li>
-<li>We see a similar peak in May/June of 2018 for much the same reasons. Although the club recorded it’s seventh consecutive scudetto and fourth consecutive Coppa in those months, most of the positive comments occured during the blogs “Season Ratings” articles where users commented on their team desires going forward.</li>
+<li>We see a similar peak in May/June of 2018 for much the same reasons. Although the club recorded it’s seventh consecutive scudetto and fourth consecutive Coppa in those months, most of the positive comments occurred during the blogs “Season Ratings” articles where users commented on their team desires going forward.</li>
 <li>More recently, we saw a spike in sentiment in May of 2019 when Allegri left the club. Most comments were very supportive of his time at the club (deservedly so).</li>
 </ul>
 </div>
 <div id="lows" class="section level5">
 <h5>Lows:</h5>
 <ul>
-<li>The lowest average sentiment occured in August of 2012 as the Calcioscommesse scandal rulings were given, and Conte receives a 10 month touchline ban</li>
+<li>The lowest average sentiment occurred in August of 2012 as the Calcioscommesse scandal rulings were given, and Conte receives a 10 month touchline ban</li>
 <li>Just before the site’s high, we had quite a drop in sentiment when Conte resigned, and Allegri was the rumored replacement (a lot of hate on him at first). It’s interesting to note how commenters had two opposite reactions to the resignations of Conte and Allegri.</li>
 </ul>
 <p>We can also look at the most and least positive articles using only articles with more than 10 comments:</p>
@@ -579,13 +562,15 @@ fig.show()</code></pre>
 <h4>Most Positive Articles (Adjusted):</h4>
 <iframe src="Plots/most_pos_art_adj.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
 </iframe>
-<p>There are a few things to take away from these lists. To begin with, pretty much every article sits within <span class="math inline">\(\pm 0.5\)</span> of the sites average sentiment. More interesting is that for articles written sicne 2015 (to somewhat account for growth) eight of the ten most negative articles are from that time period, while only three of the most positive occur in the same time period.</p>
+<p>There are a few things to take away from these lists. To begin with, pretty much every article sits within <span class="math inline">\(\pm 0.5\)</span> of the sites average sentiment. More interesting is that for articles written since 2015 (to somewhat account for growth) eight of the ten most negative articles are from that time period, while only three of the most positive occur in the same time period.</p>
 </div>
 </div>
 <div id="finding-players-mentioned-in-comments" class="section level3">
 <h3>Finding Players Mentioned in Comments</h3>
 <p>Since we’ve seen how the comment sentiment for each article and how it’s relatively stable, can we track how the sentiment for individual players has changed over time?</p>
-<p>To start, we create (and by create I mean stole) a function to extract the ‘PERSON’ or ‘ORGANIZATION’ from a comment. This is done by looking at the structure of a comment (explain this more) and by looking for capitalization.</p>
+<p>To start, we create (and by create I mean stole) a function to extract the ‘PERSON’ or ‘ORGANIZATION’ from a comment. This is mostly done through part-of-speech tagging. This tokenizes a comment into a hierarchy of sentence structure into their individual word types (such as adjective [JJ tag], proper noun [NNP], and verbs [VB]). Based on this hierarchy, we can extract the subjects of the comment.</p>
+<p>We extract both ‘PERSON’ and ‘ORGANIZATION’ to catch any mistranslations of the comment. For instance, there was a comment something to the effect of “Juve needs to talk to his manager”. Although clearly Juve is an organization, since they can’t actually speak, it was classified as a person.</p>
+<p>Although this method isn’t perfect (NLP typically isn’t), we just need a general idea of which people are mentioned the most by the blog, and fill find all comments which mention them later.</p>
 <pre class="python"><code>
 from nltk import word_tokenize, pos_tag, ne_chunk
 from nltk import Tree
@@ -621,7 +606,7 @@ print(test)
 <pre><code>## [&#39;Balzaretti&#39;]</code></pre>
 <pre class="python"><code>print(get_continuous_chunks(test, &#39;ORGANIZATION&#39;))</code></pre>
 <pre><code>## [&#39;GREAT&#39;]</code></pre>
-<p>Now we just run this through all of the comments to look at who’s mentioned the most in all comments.</p>
+<p>Now we just run this through all of the comments to look at who’s mentioned the most in all comments. This list can be found in the <a href="https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data">data folder</a> in the “Name_Freq.csv”. Since this loop takes a few hours to run, I just load this data.</p>
 <pre class="python"><code>#Finds the frequerncy of names used in the comments
 #I wouldn&#39;t run this, it takes forever
 
@@ -662,10 +647,9 @@ for i in range(0,len(names)):
         
         #reset the pandas indexing, becuase it&#39;s retarded
         name_freq = name_freq.reset_index(drop=True)</code></pre>
-<p>Note: The previous code takes like 8 hours to run, so I just saved the results and load them up again to make things faster</p>
 <pre class="python"><code>#Load the data from the last loop to make it faster
 name_freq = pd.read_csv(&#39;Data/Name_Freq.csv&#39;)</code></pre>
-<p>The top 30 most mentioned people/orginizations are as followed:</p>
+<p>The top 30 most mentioned people/organizations are as followed:</p>
 <pre class="python"><code>#Top 30 names
 name_freq = name_freq.sort_values(by=&#39;Frequency&#39;,ascending=False)</code></pre>
 <iframe src="Plots/freq_tab.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
@@ -681,7 +665,7 @@ name_freq = name_freq.sort_values(by=&#39;Frequency&#39;,ascending=False)</code>
 </div>
 <div id="looking-at-sentiment-for-the-most-mentioned-players" class="section level3">
 <h3>Looking at Sentiment for the Most Mentioned Players</h3>
-<p>From our list, we need to find comments that at some point mention our top 11 players by mentions in the comments (11 because I wanted to be sure to include Buffon and sexi boi Pirlo)</p>
+<p>From our list, we need to find comments that at some point mention our top 11 players by mentions in the body (11 because I wanted to be sure to include Buffon and sexi boi Pirlo). This next loop goes through the body of the comment and just counts the number of times any of the top 11 people were mentioned in it. Even though people tend to get nicknames we found that very few made the list (other than “La Joya” for Dybala, and “Gigi” for Buffon), and therefore ignored most of them.</p>
 <pre class="python"><code>#loop through all the comments
 for i in range(0,len(comments)):
     
@@ -730,6 +714,7 @@ for i in range(0,len(comments)):
             comments.iloc[i,18] = num_pirlo
         if (num_buff != 0):
             comments.iloc[i,19] = num_buff</code></pre>
+<p>Since we now know which comments mention any of the top people, we run our SID function through these comments, saving the overall score. Since this looks at the entirety of a comment to find the sentiment we were worried that in especially long comments that mentioned a few people (for instance rating people after a match), they might be misrepresented by the sentiment (for example, a comment could say “I though Dybala was terrible, but Pirlo was ok”. This would have an overall negative sentiment for both Dybala and Pirlo). When actually testing, we found that these misrepresentations didn’t happen to all that much of an effect, and though that they still represented an overall picture of someones sentiment towards the club.</p>
 <pre class="python"><code>comms = top_used.index[(top_used.Dybala != 0) | (top_used.Allegri != 0) | (top_used.Pogba != 0) | (top_used.Marchisio != 0) | (
     top_used.Bonucci != 0) | (top_used.Ronaldo != 0) | (top_used.Pjanic != 0) | (top_used.Conte != 0) | (
     top_used.Higuain != 0) | (top_used.Pirlo != 0) | (top_used.Buffon != 0)]
@@ -776,7 +761,7 @@ for i in range(0,len(comms)):
 ## 80000 of 114077
 ## 100000 of 114077
 ## 114076 of 114077</code></pre>
-<p>We can first compare all the people against each other using boxplots:</p>
+<p>We can first compare all the people against each other using box-plots:</p>
 <pre class="python"><code>fig = go.Figure()
 fig.add_trace(go.Box(y=dybala[&#39;Dybala&#39;], boxmean=&#39;sd&#39; ,name=&quot;Dybala&quot;))
 fig.add_trace(go.Box(y=allegri[&#39;Allegri&#39;], boxmean=&#39;sd&#39;, name=&#39;Allegri&#39; ))
@@ -791,14 +776,17 @@ fig.add_trace(go.Box(y=pirlo[&#39;Pirlo&#39;], boxmean=&#39;sd&#39; ,name=&#39;P
 fig.add_trace(go.Box(y=buffon[&#39;Buffon&#39;], boxmean=&#39;sd&#39; ,name=&#39;Buffon&#39;))
 fig.update_layout(showlegend=False)
 fig.show()</code></pre>
-<iframe src="Plots/player_boxes.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+<iframe src="Plots/player_boxes.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="350" scrolling="no" seamless="seamless" frameborder="0">
 </iframe>
 <p>Although they all seem relatively similar (since all out sentiments are bound between -1 and 1), we can still gain a few insights:</p>
 <p><em>The people with the highest means are Pirlo (0.393), Pogba (0.384) ,and Marchisio (0.373) </em>Those with the lowest means were Allegri (0.335), Higuain (0.327), and Bonucci (0.326) <em>Those with the smallest standard deviation (or most consistent sentiment) are Pogba (0.55), Dybala (0.551), Pjanic (0.556) </em>The opposite end (highest sd, bigger variation in sentiment): Ronaldo (0.583), Conte (0.595), Allegri (0.596)</p>
-<p>From just this basic information we can build general pictures of how readers react to players. For instance Higuain had a lower mean of 0.327 and a lower standard deviation of 0.558, meaning he was generally consitently more poorly rated (at least than those on this list)</p>
+<p>From just this basic information we can build general pictures of how readers react to players. For instance Higuain had a lower mean of 0.327 and a lower standard deviation of 0.558, meaning he was generally consistently more poorly rated (at least than those on this list)</p>
 <p>We can also see some general trends:</p>
 <p><em>All proper midfielders on the list (meaning I’m not counting Dybala) are on average higher rated. </em>All managers have a high standard deviation, meaning they received both a lot of praise and hate (in fact, Allegri is the only person to have a lower quartile below zero)</p>
-<p>We should now look at the sentiment of each person over time, by plotting a rolling average (over 100 comments) time series. From my initial observations the sentiment for people stayed around their overall average. They would tend to see dips in sentiment over various reasons (explained more below), but you weren’t likely to see individual peaks in sentiment (just returning to their average).</p>
+</div>
+<div id="peoples-sentiment-over-time" class="section level3">
+<h3>Peoples Sentiment Over Time:</h3>
+<p>We should now look at the sentiment of each person over time, by plotting a rolling average (over 100 comments) time series. From my initial observations the sentiment for people stayed around their overall average. They would tend to see dips in sentiment over various reasons (explained more below), but you weren’t likely to see individual peaks in sentiment (just returning to their average). I have also showed each persons arrival (a blue line) and departure (red line) from the club.</p>
 <pre class="python"><code>fig = make_subplots(rows=3, cols=1,
                    shared_xaxes=True, 
                    subplot_titles=(&quot;Dybala&quot;, &quot;Allegri&quot;, &quot;Pogba&quot;))
@@ -857,7 +845,7 @@ fig.add_trace(go.Scatter(
     y=[0.6,0.6],
     mode=&quot;markers+text&quot;,
     name=&quot;Markers and Text&quot;,
-    text=[&quot;1-0 Bolgna&quot;,&quot;Injury Return&quot;],
+    text=[&quot;1-0 Bologna&quot;,&quot;Injury Return&quot;],
     textposition=&quot;top center&quot;,
 ),row=3,col=1)
 fig.add_trace(go.Scatter(
@@ -875,16 +863,16 @@ fig.show()</code></pre>
 <div id="first-takeaways" class="section level4">
 <h4>First Takeaways:</h4>
 <div id="dybala" class="section level5">
-<h5>Dybala</h5>
+<h5>Dybala:</h5>
 <ul>
-<li>Dybala is a a player where individual performances don’t seem to effect their overall rating (Marchisio and Pjanic also exibit this behavior).</li>
+<li>Dybala is a a player where individual performances don’t seem to effect their overall rating (Marchisio and Pjanic also exhibit this behavior).</li>
 <li>For instance, what I consider his best performance (3-0 Barcelona in April 2017) doesn’t seem to have a noticeable change in sentiment</li>
 </ul>
 </div>
 <div id="allegri" class="section level5">
 <h5>Allegri:</h5>
 <ul>
-<li>Allegri definitively seemed to take the brunt of poor performances near the begining of his tenure as manager (typically corresponding with results in the champions league).</li>
+<li>Allegri definitively seemed to take the brunt of poor performances near the beginning of his tenure as manager (typically corresponding with results in the champions league).</li>
 <li>These dips include 0-1 losses to Athletico and Olympiakos in November 2014, a poor start to the 2015/16 season (hovered in the teens), 2-4 loss to Bayern in March 2016.</li>
 <li>Into the later parts of his tenure, just a single loss (such as the 1-2 loss to Manchester United in November 2018) would destroy his sentiment.</li>
 </ul>
@@ -893,7 +881,7 @@ fig.show()</code></pre>
 <h5>Pogba:</h5>
 <ul>
 <li>Pogba, much like Dybala typically hovered around around his average. Opposed to most players, his noticeable differences are peaks instead of troughs (which is even more odd considering he has the highest overall average).</li>
-<li>These peaks occured around 1-0 Bologna in April 2013 (scored the only goal). His heighest peaks on May and August of 2014 don’t seem to correspond with anything in particular. On his return from injury in May 2015 (scoring against Cagliari in a 1-1 draw to secure the title, assists in the 1-1 draw against Madrid, and 2-1 victory against Lazio)</li>
+<li>These peaks occurred around 1-0 Bologna in April 2013 (scored the only goal). His highest peaks on May and August of 2014 don’t seem to correspond with anything in particular. On his return from injury in May 2015 (scoring against Cagliari in a 1-1 draw to secure the title, assists in the 1-1 draw against Madrid, and 2-1 victory against Lazio)</li>
 <li>Like Allegri before him, he had a large dip for the 1-0 losses to Athletico and Olympiakos in November of 2014</li>
 <li>He is the first player to show sellers remorse/blinded by nostalgia, as most player who’s left at some point in their careers get an increase in sentiment</li>
 </ul>
@@ -963,6 +951,8 @@ fig.add_trace(go.Scatter(
 ),row=3,col=1)
 fig.update_layout(showlegend=False)
 fig.show()</code></pre>
+<iframe src="Plots/player_sent_2.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 </div>
 </div>
 <div id="some-takeaways" class="section level4">
@@ -972,7 +962,7 @@ fig.show()</code></pre>
 <ul>
 <li>Claudio is interesting mostly for a lack of changes based on individual performances, but showed a definitive seasonality in his earlier seasons. He go from a season low to a season high as the season ended (March/April/May mathematically for most seasons).</li>
 <li>These lows to highs include 2009/10 (7th), 2010/11 (7th), 2011/12 (1st), 2012/13 (1st), 2013/14 (1st), 2014/15 (1st)</li>
-<li>At the begining of 2016, he mostly stabilized at around 0.3 sentiment.</li>
+<li>At the beginning of 2016, he mostly stabilized at around 0.3 sentiment.</li>
 </ul>
 </div>
 <div id="conte" class="section level5">
@@ -1059,6 +1049,8 @@ fig.add_trace(go.Scatter(
 
 fig.update_layout(showlegend=False)
 fig.show()</code></pre>
+<iframe src="Plots/player_sent_3.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 </div>
 </div>
 <div id="more-takeaways" class="section level4">
@@ -1073,7 +1065,7 @@ fig.show()</code></pre>
 <h5>Bonucci:</h5>
 <ul>
 <li>Bonucci seems to take a lot of blame over his career, flirting with negative sentiment a few times in his career</li>
-<li>These times in order: March 2012 (During the 5 draws in a row), August 2012 (Calcioscommesse scandal accusation, and aquittal), January 2013 (1-2 loss to 10 man Sampdoria), Dec 2016 (injury in 3-1 loss to Genoa), February 2016 (argument with Allegri leading to fine)</li>
+<li>These times in order: March 2012 (During the 5 draws in a row), August 2012 (Calcioscommesse scandal accusation, and acquittal), January 2013 (1-2 loss to 10 man Sampdoria), Dec 2016 (injury in 3-1 loss to Genoa), February 2016 (argument with Allegri leading to fine)</li>
 <li>The only player from the top 11 who actually managed to get well into the negatives at some point. Seems like he took most of the blame for the April 2019 loss to Ajax</li>
 </ul>
 </div>
@@ -1124,7 +1116,7 @@ fig.add_trace(go.Scatter(
     y=[0.65,0.5,0.6],
     mode=&quot;markers+text&quot;,
     name=&quot;Markers and Text&quot;,
-    text=[&quot;Injury&quot;,&quot;Thrashcan Heart&quot;,&quot;Record Apps&quot;],
+    text=[&quot;Injury&quot;,&quot;Trashcan Heart&quot;,&quot;Record Apps&quot;],
     textposition=&quot;top center&quot;
 ),row=2,col=1)
 fig.add_trace(go.Scatter(
@@ -1137,6 +1129,8 @@ fig.add_trace(go.Scatter(
 ),row=2,col=1)
 fig.update_layout(showlegend=False)
 fig.show()</code></pre>
+<iframe src="Plots/player_sent_4.html" style="max-width = 100%" sandbox="allow-same-origin allow-scripts" width="100%" height="800" scrolling="no" seamless="seamless" frameborder="0">
+</iframe>
 </div>
 </div>
 <div id="the-i-miss-the-good-old-days-takeaways" class="section level4">
@@ -1152,9 +1146,9 @@ fig.show()</code></pre>
 <div id="buffon" class="section level5">
 <h5>Buffon:</h5>
 <ul>
-<li>A career high in sentiment in November through December of 2010 (this ocurred during a injury to Buffon, where Storari lead the team to a number of lackluster draws and losses [1-1 Brescia, 1-1 Roma, 1-1 Fiorentina,1-4 Parma,0-3 Napoli])</li>
+<li>A career high in sentiment in November through December of 2010 (this occurred during a injury to Buffon, where Storari lead the team to a number of lackluster draws and losses [1-1 Brescia, 1-1 Roma, 1-1 Fiorentina,1-4 Parma,0-3 Napoli])</li>
 <li>This then turned into a career low from January through March of 2011 as the results got worse when he returned from injury [1-2 Palermo, 0-2 Lecce (And a red card), 2-1 Udinese, 0-1 Milan (and an error leading to goal)]</li>
-<li>After his sending off against Real in April 2018, he quickly got back fan favor for his “thrashcan heart” statement</li>
+<li>After his sending off against Real in April 2018, he quickly got back fan favor for his “trashcan heart” statement</li>
 <li>A nice final increase in sentiment just for his record 513th league appearance for Juve</li>
 </ul>
 </div>
