@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
@@ -85,7 +84,6 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
@@ -234,6 +232,7 @@ $(document).ready(function () {
   border: none;
   display: inline-block;
   border-radius: 4px;
+  background-color: transparent;
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li {
@@ -269,7 +268,7 @@ $(document).ready(function () {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="index.html">Natural Language Processing on site comments</a>
+      <a class="navbar-brand" href="index.html">Natural Language Processing on Site Comments</a>
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
@@ -282,9 +281,12 @@ $(document).ready(function () {
 <li>
   <a href="sent.html">Sentiment Analysis</a>
 </li>
+<li>
+  <a href="about.html">About Us</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        
+
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -300,7 +302,7 @@ $(document).ready(function () {
 </div>
 
 
-<p>For us to begin natural language processing and other analysis on the website <a href="https://www.blackwhitereadallover.com/" class="uri">https://www.blackwhitereadallover.com/</a> we of course need to first scrape the necessary data. To do so, we chose to use the selenium package in python. To begin, we need to load required packages, and set up a chrome driver:</p>
+<p>For us to begin natural language processing and other analysis on the website <a href="https://www.blackwhitereadallover.com/" class="uri">https://www.blackwhitereadallover.com/</a> we need to first scrape the necessary data. To do so, we chose to use the <a href="https://selenium-python.readthedocs.io/">selenium</a> package in python. To begin, we need to load required packages, and set up a <a href="https://chromedriver.chromium.org">chrome driver</a>:</p>
 <pre class="python"><code># Libraries
 
 import pandas as pd
@@ -314,12 +316,12 @@ from time import sleep</code></pre>
 <pre class="python"><code># Setting up the Chrome webdriver
 
 options = webdriver.ChromeOptions()
-options.add_argument(&#39;--headless&#39;) #uncomment to not render driven browser during scrapping
+options.add_argument(&#39;--headless&#39;) # controls whether or not the browser window renders during scraping
 
 options.binary_location = &quot;/usr/bin/google-chrome&quot;
 chrome_driver_binary = &quot;/usr/local/bin/chromedriver&quot;
 driver = webdriver.Chrome(chrome_driver_binary, chrome_options=options)</code></pre>
-<p>Since each of these scrapers can take quite some time to run, all the data has been saved as csv’s and can be found <a href="https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data">here:</a>.</p>
+<p>Since each of these scrapers can take quite some time to run, all the data has been saved as csv’s and can be found <a href="https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data">here</a>.</p>
 <div id="scraping-article-names-and-links" class="section level3">
 <h3>Scraping Article Names and Links:</h3>
 <p>For our scraper to function best in a loop, we needed to get links for all the articles published in the blog. We were lucky enough that the website had a decent <a href="https://www.blackwhitereadallover.com/archives/2007/2">archives page</a> which was then looped through saving all hyperlinks (This list can be found in “links_orig.csv” in our data folder).</p>
@@ -332,11 +334,9 @@ for j in range(2007,2021):
         single_period = &#39;https://www.blackwhitereadallover.com/archives/&#39;+str(j)+&#39;/&#39;+str(k)
         archive_periods.append(single_period)
         ;
-        
-# Subsetting out some periods for which there are no articles
-active_archives = archive_periods[1:len(archive_periods)-8]
 
-#len(active_archives) #159
+# Subsetting out some periods for which there are no articles (Jan, 2007 and later months of 2020)
+active_archives = archive_periods[1:len(archive_periods)-8]
 
 #print(active_archives[100])</code></pre>
 <pre class="python"><code>## Collecting the article URLS from each archive page, storing in &#39;archive_links&#39; list
@@ -345,48 +345,43 @@ archive_links = []
 
 for u in range(0,len(archive_periods)):
     print(u)
-    
-    sleep(randint(4, 7))  # sleep between 1 and 3 seconds
-    
+
+    sleep(randint(4, 7))  # random sleep
+
     driver.get(active_archives[u])
-    
-    
+
     # Checking to see if &#39;Load More&#39; button exists (for months with&gt;30 articles) and if so clicking it
     button = driver.find_elements_by_xpath(&quot;//button[contains(text(),&#39;Load More&#39;)]&quot;)
     while len(button) &gt; 0 :
-        button[0].click()  
+        button[0].click()
         sleep(7)
         button = driver.find_elements_by_xpath(&quot;//button[contains(text(),&#39;Load More&#39;)]&quot;)
 
- 
-    
-    # Retrieving number of articles from title 
+    # Retrieving number of articles from title
     # OLD archive_title = driver.find_element_by_xpath(&#39;/html/body/div[1]/div[2]/h1&#39;)
     archive_title = driver.find_element_by_xpath(&quot;//h1[contains(text(),&#39;Archives for&#39;)]&quot;)
 
     #print(archive_title.text)
-    
+
     start = archive_title.text.find(&#39;(&#39;)+1
     start = archive_title.text[start:]
     articles = int(start.replace(&#39;)&#39;,&#39;&#39;))
     #print(articles)
-    
-    
+
     # Retrieving the article links themselves
     for q in range(0,articles):
-        
+
         article_link = driver.find_elements_by_css_selector(&#39;h2.c-entry-box--compact__title&gt;a&#39;)
         article_link = article_link[q].get_attribute(&#39;href&#39;)
-        
-    
-        archive_links.append(article_link) 
-           
+
+        archive_links.append(article_link)
+
     ;</code></pre>
 </div>
 <div id="logging-into-bwrao" class="section level3">
 <h3>Logging into BWRAO:</h3>
-<p>Our next step was to log into the site itself, as this provided more information about the comments (such as user recommendations).</p>
-<p>Note: for use, you will need to replace the <code>REPLACE_ME_USER_NAME</code> and <code>REPLACE_ME_PASSWORD</code> in lines 11 and 16</p>
+<p>The next step was to log into the site itself to get access to comment recommendations which are not available to anonymous browsers of the site. Unfortunately, we discovered that comment sections close for comment and recommendation a month after the article is first posted. Further, the number of recommendations attributed to a comment disappear after a month so we were unable to use comment recs in our historical analyses.</p>
+<p>That said, selenium handles logging into a website well so we’ve left the code in for reference. <strong>Note:</strong> for use, you will need to replace the <code>REPLACE_ME_USER_NAME</code> and <code>REPLACE_ME_PASSWORD</code> in lines 11 and 16</p>
 <pre class="python"><code># Logging in to BWRAO to have access to comment recs
 
 driver.get(&quot;https://auth.voxmedia.com/login?return_to=https://www.blackwhitereadallover.com/&quot;)
@@ -415,16 +410,15 @@ element = WebDriverWait(driver, 100).until(
 <div id="scraping-comments" class="section level3">
 <h3>Scraping Comments:</h3>
 <p>We now have everything we need to start scraping. In this loop we save save both data about the article itself (title, author, publishing date), and comments (title, text body, poster, date, time, recommendations).</p>
-<p>Note: This loop took something like 30 hours between us, to make further analysis easier you can find it saved in our <a href="https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data">data folder</a> as “Comments” 1 through 6.</p>
+<p><strong>Note: This loop took something like 30 hours between us</strong>, to make further analysis easier you can find it saved in our <a href="https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data">data folder</a> as “Comments” 1 through 6.</p>
 <pre class="python"><code>##### Gathering blog title, author, publish date and comment list and comment count from a the loop of &#39;archive_links&#39;
 
 comments_df = pd.DataFrame()
 for k in range(0,len(archive_links_full)):
 #for k in range(1,20):
 
-    
     print(str(k)+&#39; of &#39;+str(len(archive_links_full)))
-    
+
     driver.get(archive_links_full[k])
 
     #Check for comments, and load, then run everything
@@ -448,30 +442,27 @@ for k in range(0,len(archive_links_full)):
 
         # Looping through all comments to gather comment title, comment body, poster, and number of recs
 
-    
-
         for i in range(1,n_comments+1):
-    
+
             xpath = &#39;//*[@id=&quot;comments&quot;]/div[2]/div[&#39;+str(i)+&#39;]&#39;
-     
+
             comment_title = driver.find_element_by_xpath(xpath + &#39;/div[1]&#39;)
             comment_body = driver.find_element_by_xpath(xpath + &#39;/div[2]&#39;)
-    
+
             # Generally, comment meta data is stored in the 3rd div except when commentors have a signature
             # in which case the meta data is in the 4th div
-            
+
             #recs aren&#39;t weren&#39;t put in till later, and I was too lazy to find out when
             #so I just check if they exist first
             test = driver.find_elements_by_xpath(xpath+&#39;/div[3]/span[2]/button[2]/span[2]&#39;)
             test2 = driver.find_elements_by_xpath(xpath+&#39;/div[4]/span[2]/button[2]/span[2]&#39;)
-            
 
             if driver.find_elements_by_xpath(xpath + &#39;/div[4]&#39;):
                 meta = driver.find_element_by_xpath(xpath+&#39;/div[4]/span[1]&#39;)
                 meta = meta.text.rsplit(&#39; on &#39;,1)
                 post_date = meta[1]
                 poster = meta[0].split(&#39; by &#39;)[1]
-    
+
                 if len(test2) &gt; 0:
                 # Some comments have no recommendations
                     if driver.find_elements_by_xpath(xpath + &#39;/div[4]/span[2]/button[2]/span[2]&#39;):
@@ -484,7 +475,7 @@ for k in range(0,len(archive_links_full)):
                 meta = meta.text.rsplit(&#39; on &#39;,1)
                 post_date = meta[1]
                 poster = meta[0].split(&#39; by &#39;)[1]
-        
+
                 if len(test) &gt;0:
                 # Some comments have no recommendations
                     if driver.find_elements_by_xpath(xpath + &#39;/div[3]/span[2]/button[2]/span[2]&#39;):
@@ -492,7 +483,7 @@ for k in range(0,len(archive_links_full)):
                         recs = int(recs.text.replace(&#39;(&#39;,&#39;&#39;).replace(&#39;)&#39;,&#39;&#39;))
                     else:
                         recs = 0
-                        
+
             if len(test) == 0 &amp; len(test2) == 0:
                 recs = &quot;&quot;
 

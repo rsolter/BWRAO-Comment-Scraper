@@ -1,0 +1,282 @@
+---
+title: "BWRAO Blog Growth"
+author: "Ravi Solter, Alexander Traczyk"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,message = FALSE,warning = FALSE)
+library(tidyverse)
+library(scales)
+library(zoo)
+library(tidyquant)
+library(kableExtra)
+library(RColorBrewer)
+```
+
+```{r formatting}
+
+df <- read.csv("/home/ravisolter/Personal Git/BWRAO-Comment-Scraper/Data/Full_Comments_no_body.csv",header = T,stringsAsFactors = F)
+users <- read.csv("/home/ravisolter/Personal Git/BWRAO-Comment-Scraper/Data/User_Join_Dates.csv",header = T,stringsAsFactors = F)
+
+# formatting 'users'
+users <- users[,2:3]
+users$Join.Date <- as.Date(users$Join.Date)
+users <- users %>% mutate(Days_active=as.integer(Sys.Date()-Join.Date)) %>% filter(!is.na(Join.Date))
+
+
+df<-df[,2:ncol(df)]
+
+# Dates
+df$Article_Date <- as.Date(df$Article_Date)
+df$Comment_Date <- as.Date(df$Comment_Date)
+
+# Trimming
+df$Article_Author <- stringr::str_trim(df$Article_Author)
+df$Comment_Poster <- stringr::str_trim(df$Comment_Poster)
+
+```
+
+The Juventus fan site, [Black White & Read All Over](https://www.blackwhitereadallover.com/) (BWRAO) is the largest English-language fan site on the internet and has shown notable growth since its creation in 2007.
+
+Originally part of the 'The Offside' network of soccer blogs, BWRAO has steadily grown in the last 13 years, especially since [joining](https://gigaom.com/2011/03/03/419-sb-nation-buys-two-sites-expands-college-sports-global-soccer-coverage/) the SB Nation network which is owned by Vox Media. The site has grown in nearly all product and engagement metrics, with monthly counts of articles, comments, active posters, and even authors all increasing.
+
+****
+
+```{r internal growth over time, fig.width=11,fig.height=7}
+article_author <- df
+article_author <- article_author %>% mutate(article_year=year(Article_Date),
+                         article_month=month(Article_Date),
+                         day="01")
+article_author$Yr_Mo <- as.Date(paste(article_author$article_year,article_author$article_month,"01",sep="-"))
+article_author <- article_author %>% group_by(Yr_Mo) %>%
+  summarise(article_count=n_distinct(Article_Title),
+            author_count=n_distinct(Article_Author)) %>%
+  filter(!Yr_Mo=="2020-04-01") # filtering out last month
+
+
+ggplot(article_author) +
+
+  geom_point(aes(x=Yr_Mo, y=author_count), alpha=0.4, color="#636363") +
+  geom_line(aes(x=Yr_Mo, y=author_count), color="#d95f0e", size=1) +
+
+  geom_point(aes(x=Yr_Mo, y=article_count/3), color="#3182bd", size=1) +
+  geom_line(aes(x=Yr_Mo, y=article_count/3), color="#3182bd", size=1) +
+
+
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+
+  scale_y_continuous(
+
+    # Features of the first axis
+    name = "Author Count",
+
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(~.*3, name="Article Count")
+  ) +
+
+  geom_vline(xintercept = as.Date("2008-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2009-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2010-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2011-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2012-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2013-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2014-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2015-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2016-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2017-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2018-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2019-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2020-01-01"),linetype=3) +
+  theme_minimal() +
+  xlab(" ") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  #ggtitle("Monthly Count of Authors and Articles") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+#### Growing Number of Articles and Authors
+
+The number of articles produced on a monthly basis has steadily grown since mid-2011. The monthly count of authors contributing to the site has also grown over the same period.
+
+**Note** that up until that mid-point in 2011, the authors credit in each article read "The Offside Juventus"
+
+
+****
+
+
+```{r growth over time, fig.width=11,fig.height=7}
+article_yr_mo <- df
+article_yr_mo <- article_yr_mo %>% mutate(article_year=year(Article_Date),
+                         article_month=month(Article_Date),
+                         day="01")
+article_yr_mo$Yr_Mo <- as.Date(paste(article_yr_mo$article_year,article_yr_mo$article_month,"01",sep="-"))
+article_yr_mo <- article_yr_mo %>% group_by(Yr_Mo) %>%
+  summarise(article_count=n_distinct(Article_Title),
+            comment_count=n()) %>%
+  filter(!Yr_Mo=="2020-04-01") # filtering out last month
+
+
+ggplot(article_yr_mo) +
+  #geom_point(aes(x=Yr_Mo, y=article_count), color="#756bb1", size=1) +
+  #geom_line(aes(x=Yr_Mo, y=article_count), color="#756bb1", size=1) +
+
+  geom_point(aes(x=Yr_Mo, y=comment_count), alpha=0.4, color="#756bb1") +
+  geom_line(aes(x=Yr_Mo, y=comment_count), color="#756bb1", size=1) +
+
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+
+  #scale_y_continuous(
+  #  
+  #  # Features of the first axis
+  #  name = "Article Count",
+  #  
+  #  # Add a second axis and specify its features
+  #  sec.axis = sec_axis(~./1000, name="Comment Count",labels = comma)
+  #) +
+
+  geom_vline(xintercept = as.Date("2008-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2009-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2010-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2011-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2012-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2013-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2014-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2015-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2016-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2017-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2018-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2019-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2020-01-01"),linetype=3) +
+  theme_minimal() +
+  xlab(" ") +
+  ylab("Comment Count") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  ggtitle("Monthly Count of Comments") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+
+#### Growing Engagement in Comment Section
+
+Similarly, the number of comments had grown steadily since mid-2011. A few months stand out for generating the most commentary:
+
+- By far, the summer of 2016 was the busiest time on the blog, with June, July and August articles generating the most comment traffic. A few factors behind this surge were:
+
+  -   **Big transfers**: Pogba going back to United, Higuain and Pjanic secured their move from Napoli and Roma to Juve. Dani Alves also arrived at Juve this summer, while Morata headed back to Madrid.
+  -   **Euro 2016** was ongoing, with Germany ousting Italy in the quarter finals on July 2nd.
+  -   We signed [Simone Zaza](https://thumbs.gfycat.com/FemaleAdventurousAurochs-size_restricted.gif)..
+
+- Unsurpisingly, the [signing of Cristinao Ronaldo](https://www.blackwhitereadallover.com/2018/7/10/17555228/official-juventus-sign-cristiano-ronaldo-2018-serie-a-transfers) on July 10th, 2018 generated a huge amount of traffic to the site.
+
+- Finally, the month of May, 2015 generated a lot of traffic, with Juventus reaching the final of the champions league for the first time in 12 years.
+
+****
+
+```{r Monthly_Active, fig.width=11,fig.height=7}
+
+monthly_active <- df
+monthly_active <- monthly_active %>% mutate(comment_year=year(Comment_Date),
+                         comment_month=month(Comment_Date),
+                         day="01")
+monthly_active$Yr_Mo <- as.Date(paste(monthly_active$comment_year,monthly_active$comment_month,"01",sep="-"))
+
+monthly_active <- monthly_active %>%
+  group_by(Yr_Mo) %>%
+  summarise(commentor_N=n_distinct(Comment_Poster)) %>%
+  filter(!Yr_Mo=="2020-04-01") # filtering out last month
+
+
+monthly_active <- left_join(monthly_active,article_yr_mo) %>% select(-comment_count)
+
+ggplot(monthly_active) +
+  geom_point(aes(x=Yr_Mo, y=commentor_N), color="#2ca25f", size=1) +
+  geom_line(aes(x=Yr_Mo, y=commentor_N), color="#2ca25f", size=1) +
+
+#  geom_point(aes(x=Yr_Mo, y=article_count), color="#d95f0e", size=1) +
+#  geom_line(aes(x=Yr_Mo, y=article_count), color="#d95f0e", size=1) +
+
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+
+  geom_vline(xintercept = as.Date("2008-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2009-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2010-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2011-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2012-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2013-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2014-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2015-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2016-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2017-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2018-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2019-01-01"),linetype=3) +
+  geom_vline(xintercept = as.Date("2020-01-01"),linetype=3) +
+  theme_minimal() +
+  xlab(" ") + ylab("Monthly Active Commentors") +
+  ggtitle("Monthly Count of Active Commentators") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+
+
+#### Monthly Active Users
+
+The trend in monthly active users appears somewhat unintuitive. There appears to be a greater number of active users in the earlier years when the blog was producing fewer articles and fewer comments.
+
+
+However, a closer look at the type of monthly active users broken out by the number of comments they make show a more consistent story. Following the switch from The Offside to SB Nation in [March, 2013](https://www.blackwhitereadallover.com/2012/3/1/2835935/bienvenuti-juventini), the number of users posting only 1 comment per month dropped from roughly 30% to 15%. The swith to SB Nation also coincided with switching from the 'disqus' comment system to the one that is currently in use.  
+
+
+
+
+```{r Proportion, fig.width=12,fig.height=7}
+
+monthly_active <- df
+monthly_active <- monthly_active %>% mutate(comment_year=year(Comment_Date),
+                         comment_month=month(Comment_Date),
+                         day="01")
+monthly_active$Yr_Mo <- as.Date(paste(monthly_active$comment_year,monthly_active$comment_month,"01",sep="-"))
+
+monthly_active_counts <- monthly_active %>%
+  group_by(Yr_Mo,Comment_Poster) %>%
+  summarise(posts=n()) %>%
+  filter(!Yr_Mo=="2020-04-01") %>% as.data.frame()
+
+monthly_active_counts$Group <- ifelse(monthly_active_counts$posts<2,"1",
+                                      ifelse(monthly_active_counts$posts>1&monthly_active_counts$posts<=5,"2 to 5",
+                                      ifelse(monthly_active_counts$posts>5&monthly_active_counts$posts<=10,"6 to 10",
+                                      ifelse(monthly_active_counts$posts>10&monthly_active_counts$posts<=20,"11 to 20",
+                                      ifelse(monthly_active_counts$posts>20&monthly_active_counts$posts<=50,"21 to 50",
+                                      ifelse(monthly_active_counts$posts>50&monthly_active_counts$posts<=100,"51 to 100",
+                                      ifelse(monthly_active_counts$posts>100,"+100",NA)))))))
+
+monthly_active_counts <- monthly_active_counts %>%
+  group_by(Yr_Mo,Group) %>%
+  summarise(n=n()) %>%
+  mutate(freq=n/sum(n)) %>%
+  as.data.frame()
+
+monthly_active_counts$Group <- factor(monthly_active_counts$Group,
+                             levels=c("1","2 to 5","6 to 10","11 to 20","21 to 50","51 to 100","+100"))
+
+ggplot(monthly_active_counts, aes(fill=Group,y=freq,x=Yr_Mo)) +
+  geom_bar(position="fill",stat="identity") +
+  scale_fill_brewer(palette="Blues") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  theme_minimal() +
+  xlab(" ") + ylab("") +
+  ggtitle("Distribution of Comments/Active Commentators") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(legend.position="bottom", legend.title = element_blank()) +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank())
+  guides(colour = guide_legend(nrow = 1))
+
+```

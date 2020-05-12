@@ -7,7 +7,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This website is designed to showcase a project done by Ravi Solter and Alexander Traczyk as a way to show off our skills in python, web scraping, and natural language processing. As we are both Juventus fans, and avid readers of the blog [Black & Whtie & Read All Over](https://www.blackwhitereadallover.com/), we chose to scrape and analyse comment data from the site. You can follow the links provided below to see different sections of the project. 
+This website is designed to showcase a project done by Ravi Solter and Alexander Traczyk as a way to show off our skills in python, web scraping, and natural language processing. As we are both Juventus fans, and avid readers of the blog [Black & Whtie & Read All Over](https://www.blackwhitereadallover.com/), we chose to scrape and analyse comment data from the site. You can follow the links provided below to see different sections of the project.
+
+
+### [Meta Analysis](https://rsolter.github.io/BWRAO-Comment-Scraper/meta_analyses.html)
+
+A descriptive analysis of growth trends in the BWRAO site
 
 ### [Scraping Comments](https://rsolter.github.io/BWRAO-Comment-Scraper/scrape.html)
 

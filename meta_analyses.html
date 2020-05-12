@@ -9,9 +9,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Ravi Solter, Alexander Traczyk" />
 
 
-<title>Natural Language Processing on Comments</title>
+<title>BWRAO Blog Growth</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -288,7 +289,7 @@ $(document).ready(function () {
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        
+
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -298,27 +299,115 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Natural Language Processing on Comments</h1>
+<h1 class="title toc-ignore">BWRAO Blog Growth</h1>
+<h4 class="author">Ravi Solter, Alexander Traczyk</h4>
 
 </div>
 
 
-<p>This website is designed to showcase a project done by Ravi Solter and Alexander Traczyk as a way to show off our skills in python, web scraping, and natural language processing. As we are both Juventus fans, and avid readers of the blog <a href="https://www.blackwhitereadallover.com/">Black &amp; Whtie &amp; Read All Over</a>, we chose to scrape and analyse comment data from the site. You can follow the links provided below to see different sections of the project.</p>
-<div id="meta-analysis" class="section level3">
-<h3><a href="https://rsolter.github.io/BWRAO-Comment-Scraper/meta_analyses.html">Meta Analysis</a></h3>
-<p>A descriptive analysis of growth trends in the BWRAO site</p>
+<p>The Juventus fan site, <a href="https://www.blackwhitereadallover.com/">Black White &amp; Read All Over</a> (BWRAO) is the largest English-language fan site on the internet and has shown notable growth since its creation in 2007.</p>
+<p>Originally part of the ‘The Offside’ network of soccer blogs, BWRAO has steadily grown in the last 13 years, especially since <a href="https://gigaom.com/2011/03/03/419-sb-nation-buys-two-sites-expands-college-sports-global-soccer-coverage/">joining</a> the SB Nation network which is owned by Vox Media. The site has grown in nearly all product and engagement metrics, with monthly counts of articles, comments, active posters, and even authors all increasing.</p>
+<hr />
+<p><img src="meta_analyses_files/figure-html/internal%20growth%20over%20time-1.png" width="1056" /></p>
+<div id="growing-number-of-articles-and-authors" class="section level4">
+<h4>Growing Number of Articles and Authors</h4>
+<p>The number of articles produced on a monthly basis has steadily grown since mid-2011. The monthly count of authors contributing to the site has also grown over the same period.</p>
+<p><strong>Note</strong> that up until that mid-point in 2011, the authors credit in each article read “The Offside Juventus”</p>
+<hr />
+<p><img src="meta_analyses_files/figure-html/growth%20over%20time-1.png" width="1056" /></p>
 </div>
-<div id="scraping-comments" class="section level3">
-<h3><a href="https://rsolter.github.io/BWRAO-Comment-Scraper/scrape.html">Scraping Comments</a></h3>
-<p>Using selenium to scrape comments</p>
+<div id="growing-engagement-in-comment-section" class="section level4">
+<h4>Growing Engagement in Comment Section</h4>
+<p>Similarly, the number of comments had grown steadily since mid-2011. A few months stand out for generating the most commentary:</p>
+<ul>
+<li><p>By far, the summer of 2016 was the busiest time on the blog, with June, July and August articles generating the most comment traffic. A few factors behind this surge were:</p>
+<ul>
+<li><strong>Big transfers</strong>: Pogba going back to United, Higuain and Pjanic secured their move from Napoli and Roma to Juve. Dani Alves also arrived at Juve this summer, while Morata headed back to Madrid.</li>
+<li><strong>Euro 2016</strong> was ongoing, with Germany ousting Italy in the quarter finals on July 2nd.</li>
+<li>We signed <a href="https://thumbs.gfycat.com/FemaleAdventurousAurochs-size_restricted.gif">Simone Zaza</a>..</li>
+</ul></li>
+<li><p>Unsurpisingly, the <a href="https://www.blackwhitereadallover.com/2018/7/10/17555228/official-juventus-sign-cristiano-ronaldo-2018-serie-a-transfers">signing of Cristinao Ronaldo</a> on July 10th, 2018 generated a huge amount of traffic to the site.</p></li>
+<li><p>Finally, the month of May, 2015 generated a lot of traffic, with Juventus reaching the final of the champions league for the first time in 12 years.</p></li>
+</ul>
+<hr />
+<p><img src="meta_analyses_files/figure-html/Monthly_Active-1.png" width="1056" /></p>
 </div>
-<div id="sentiment-analysis" class="section level3">
-<h3><a href="https://rsolter.github.io/BWRAO-Comment-Scraper/sent.html">Sentiment Analysis</a></h3>
-<p>Sentiment analysis of the website overall, and on individuals</p>
-</div>
-<div id="about-us" class="section level3">
-<h3><a href="https://rsolter.github.io/BWRAO-Comment-Scraper/about.html">About Us</a></h3>
-<p>Learn about the cool cats who did the analysis</p>
+<div id="monthly-active-users" class="section level4">
+<h4>Monthly Active Users</h4>
+<p>The trend in monthly active users appears somewhat unintuitive. There appears to be a greater number of active users in the earlier years when the blog was producing fewer articles and fewer comments.</p>
+<p>However, a closer look at the type of monthly active users broken out by the number of comments they make show a more consistent story. Following the switch from The Offside to SB Nation in <a href="https://www.blackwhitereadallover.com/2012/3/1/2835935/bienvenuti-juventini">March, 2013</a>, the number of users posting only 1 comment per month dropped from roughly 30% to 15%. The swith to SB Nation also coincided with switching from the ‘disqus’ comment system to the one that is currently in use.</p>
+<p><img src="meta_analyses_files/figure-html/Proportion-1.png" width="1152" /></p>
+<pre><code>## $colour
+## $title
+## list()
+## attr(,&quot;class&quot;)
+## [1] &quot;waiver&quot;
+##
+## $title.position
+## NULL
+##
+## $title.theme
+## NULL
+##
+## $title.hjust
+## NULL
+##
+## $title.vjust
+## NULL
+##
+## $label
+## [1] TRUE
+##
+## $label.position
+## NULL
+##
+## $label.theme
+## NULL
+##
+## $label.hjust
+## NULL
+##
+## $label.vjust
+## NULL
+##
+## $keywidth
+## NULL
+##
+## $keyheight
+## NULL
+##
+## $direction
+## NULL
+##
+## $override.aes
+## named list()
+##
+## $nrow
+## [1] 1
+##
+## $ncol
+## NULL
+##
+## $byrow
+## [1] FALSE
+##
+## $reverse
+## [1] FALSE
+##
+## $order
+## [1] 0
+##
+## $available_aes
+## [1] &quot;any&quot;
+##
+## $name
+## [1] &quot;legend&quot;
+##
+## attr(,&quot;class&quot;)
+## [1] &quot;guide&quot;  &quot;legend&quot;
+##
+## attr(,&quot;class&quot;)
+## [1] &quot;guides&quot;</code></pre>
 </div>
 
 

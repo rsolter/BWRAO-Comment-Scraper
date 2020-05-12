@@ -5,6 +5,8 @@ navbar:
   left:
     - text: "Home"
       href: index.html
+    - text: "Meta Analysis"
+      href: meta_analyses.html
     - text: "Scraping Comments"
       href: scrape.html
     - text: "Sentiment Analysis"

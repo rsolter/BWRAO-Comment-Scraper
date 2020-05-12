@@ -4,7 +4,7 @@ author: "Ravi Solter, Alexander Traczyk"
 output: html_document
 ---
 
-For us to begin natural language processing and other analysis on the website https://www.blackwhitereadallover.com/ we of course need to first scrape the necessary data. To do so, we chose to use the selenium package in python. To begin, we need to load required packages, and set up a chrome driver:
+For us to begin natural language processing and other analysis on the website https://www.blackwhitereadallover.com/ we need to first scrape the necessary data. To do so, we chose to use the [selenium](https://selenium-python.readthedocs.io/) package in python. To begin, we need to load required packages, and set up a [chrome driver](https://chromedriver.chromium.org):
 
 ```{r setup, include=F}
 library(reticulate)
@@ -28,14 +28,14 @@ from time import sleep
 # Setting up the Chrome webdriver
 
 options = webdriver.ChromeOptions()
-options.add_argument('--headless') #uncomment to not render driven browser during scrapping
+options.add_argument('--headless') # controls whether or not the browser window renders during scraping
 
 options.binary_location = "/usr/bin/google-chrome"
 chrome_driver_binary = "/usr/local/bin/chromedriver"
 driver = webdriver.Chrome(chrome_driver_binary, chrome_options=options)
 ```
 
-Since each of these scrapers can take quite some time to run, all the data has been saved as csv's and can be found [here:](https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data).
+Since each of these scrapers can take quite some time to run, all the data has been saved as csv's and can be found [here](https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data).
 
 ### Scraping Article Names and Links:
 
@@ -51,11 +51,9 @@ for j in range(2007,2021):
         single_period = 'https://www.blackwhitereadallover.com/archives/'+str(j)+'/'+str(k)
         archive_periods.append(single_period)
         ;
-        
-# Subsetting out some periods for which there are no articles
-active_archives = archive_periods[1:len(archive_periods)-8]
 
-#len(active_archives) #159
+# Subsetting out some periods for which there are no articles (Jan, 2007 and later months of 2020)
+active_archives = archive_periods[1:len(archive_periods)-8]
 
 #print(active_archives[100])
 ```
@@ -66,12 +64,11 @@ archive_links = []
 
 for u in range(0,len(archive_periods)):
     print(u)
-    
-    sleep(randint(4, 7))  # sleep between 1 and 3 seconds
-    
+
+    sleep(randint(4, 7))  # random sleep
+
     driver.get(active_archives[u])
-    
-    
+
     # Checking to see if 'Load More' button exists (for months with>30 articles) and if so clicking it
     button = driver.find_elements_by_xpath("//button[contains(text(),'Load More')]")
     while len(button) > 0 :
@@ -79,37 +76,34 @@ for u in range(0,len(archive_periods)):
         sleep(7)
         button = driver.find_elements_by_xpath("//button[contains(text(),'Load More')]")
 
- 
-    
-    # Retrieving number of articles from title 
+    # Retrieving number of articles from title
     # OLD archive_title = driver.find_element_by_xpath('/html/body/div[1]/div[2]/h1')
     archive_title = driver.find_element_by_xpath("//h1[contains(text(),'Archives for')]")
 
     #print(archive_title.text)
-    
+
     start = archive_title.text.find('(')+1
     start = archive_title.text[start:]
     articles = int(start.replace(')',''))
     #print(articles)
-    
-    
+
     # Retrieving the article links themselves
     for q in range(0,articles):
-        
+
         article_link = driver.find_elements_by_css_selector('h2.c-entry-box--compact__title>a')
         article_link = article_link[q].get_attribute('href')
-        
-    
-        archive_links.append(article_link) 
-           
+
+
+        archive_links.append(article_link)
+
     ;
 ```
 
 ### Logging into BWRAO:
 
-Our next step was to log into the site itself, as this provided more information about the comments (such as user recommendations).
+The next step was to log into the site itself to get access to comment recommendations which are not available to anonymous browsers of the site. Unfortunately, we discovered that comment sections close for comment and recommendation a month after the article is first posted. Further, the number of recommendations attributed to a comment disappear after a month so we were unable to use comment recs in our historical analyses.
 
-Note: for use, you will need to replace the `REPLACE_ME_USER_NAME` and `REPLACE_ME_PASSWORD` in lines 11 and 16
+That said, selenium handles logging into a website well so we've left the code in for reference.  **Note:** for use, you will need to replace the `REPLACE_ME_USER_NAME` and `REPLACE_ME_PASSWORD` in lines 11 and 16
 ```{python, eval=F}
 # Logging in to BWRAO to have access to comment recs
 
@@ -143,7 +137,7 @@ element = WebDriverWait(driver, 100).until(
 
 We now have everything we need to start scraping. In this loop we save save both data about the article itself (title, author, publishing date), and comments (title, text body, poster, date, time, recommendations).
 
-Note: This loop took something like 30 hours between us, to make further analysis easier you can find it saved in our [data folder](https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data) as "Comments" 1 through 6.
+**Note: This loop took something like 30 hours between us**, to make further analysis easier you can find it saved in our [data folder](https://github.com/rsolter/BWRAO-Comment-Scraper/tree/master/Data) as "Comments" 1 through 6.
 ```{python, eval=F}
 
 ##### Gathering blog title, author, publish date and comment list and comment count from a the loop of 'archive_links'
@@ -152,12 +146,9 @@ comments_df = pd.DataFrame()
 for k in range(0,len(archive_links_full)):
 #for k in range(1,20):
 
-    
     print(str(k)+' of '+str(len(archive_links_full)))
-    
+
     driver.get(archive_links_full[k])
-
-
 
     #Check for comments, and load, then run everything
     test = len(driver.find_elements_by_xpath('//*[@id="comments"]'))
@@ -181,31 +172,27 @@ for k in range(0,len(archive_links_full)):
 
         # Looping through all comments to gather comment title, comment body, poster, and number of recs
 
-
-    
-
         for i in range(1,n_comments+1):
-    
+
             xpath = '//*[@id="comments"]/div[2]/div['+str(i)+']'
-     
+
             comment_title = driver.find_element_by_xpath(xpath + '/div[1]')
             comment_body = driver.find_element_by_xpath(xpath + '/div[2]')
-    
+
             # Generally, comment meta data is stored in the 3rd div except when commentors have a signature
             # in which case the meta data is in the 4th div
-            
+
             #recs aren't weren't put in till later, and I was too lazy to find out when
             #so I just check if they exist first
             test = driver.find_elements_by_xpath(xpath+'/div[3]/span[2]/button[2]/span[2]')
             test2 = driver.find_elements_by_xpath(xpath+'/div[4]/span[2]/button[2]/span[2]')
-            
 
             if driver.find_elements_by_xpath(xpath + '/div[4]'):
                 meta = driver.find_element_by_xpath(xpath+'/div[4]/span[1]')
                 meta = meta.text.rsplit(' on ',1)
                 post_date = meta[1]
                 poster = meta[0].split(' by ')[1]
-    
+
                 if len(test2) > 0:
                 # Some comments have no recommendations
                     if driver.find_elements_by_xpath(xpath + '/div[4]/span[2]/button[2]/span[2]'):
@@ -218,7 +205,7 @@ for k in range(0,len(archive_links_full)):
                 meta = meta.text.rsplit(' on ',1)
                 post_date = meta[1]
                 poster = meta[0].split(' by ')[1]
-        
+
                 if len(test) >0:
                 # Some comments have no recommendations
                     if driver.find_elements_by_xpath(xpath + '/div[3]/span[2]/button[2]/span[2]'):
@@ -226,7 +213,7 @@ for k in range(0,len(archive_links_full)):
                         recs = int(recs.text.replace('(','').replace(')',''))
                     else:
                         recs = 0
-                        
+
             if len(test) == 0 & len(test2) == 0:
                 recs = ""
 
